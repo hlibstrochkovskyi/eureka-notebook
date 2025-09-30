@@ -1,17 +1,21 @@
-// FIX #1: The package must match the full folder path.
 package com.eureka;
 
-// FIX #2: We need to import all the UI classes we use from the 'ui' package.
+import com.eureka.model.AppState;
 import com.eureka.ui.EditorContainer;
 import com.eureka.ui.Sidebar;
 import com.eureka.ui.TopBar;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class EurekaApp {
 
     public static void main(String[] args) {
+        // Load data from the file FIRST
+        AppState.loadInstance(DataStorageService.loadData());
+
         SwingUtilities.invokeLater(() -> {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -24,9 +28,15 @@ public class EurekaApp {
             frame.setSize(1200, 800);
             frame.setLocationRelativeTo(null);
 
-            frame.setLayout(new BorderLayout());
+            // Add a listener to save data when the window is closing
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    DataStorageService.saveData(AppState.getInstance());
+                }
+            });
 
-            // These lines should now work because TopBar and Sidebar are imported correctly.
+            frame.setLayout(new BorderLayout());
             frame.add(new TopBar(), BorderLayout.NORTH);
 
             EditorContainer editorContainer = new EditorContainer();
@@ -39,4 +49,3 @@ public class EurekaApp {
         });
     }
 }
-

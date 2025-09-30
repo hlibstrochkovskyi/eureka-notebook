@@ -1,18 +1,14 @@
-// FIX #1: The package must be 'com.eureka.model'
 package com.eureka.model;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * A Singleton class to hold the application's state (all notes and sets).
- * This ensures that all parts of the app are working with the same data.
- */
 public class AppState {
     private static AppState instance;
-    private final List<NoteSet> sets;
-    private final List<Note> notes;
+    // These must not be final for Gson to be able to load data into them
+    private List<NoteSet> sets;
+    private List<Note> notes;
 
     private AppState() {
         sets = new ArrayList<>();
@@ -26,6 +22,24 @@ public class AppState {
         return instance;
     }
 
+    // Method to create a new, empty state, used when no save file exists
+    public static AppState createEmptyState() {
+        instance = new AppState();
+        return instance;
+    }
+
+    // Method to replace the current state with a loaded one
+    public static void loadInstance(AppState loadedState) {
+        instance = loadedState;
+        // Ensure lists are not null if the save file was corrupted or empty
+        if (instance.sets == null) {
+            instance.sets = new ArrayList<>();
+        }
+        if (instance.notes == null) {
+            instance.notes = new ArrayList<>();
+        }
+    }
+
     public List<NoteSet> getSets() {
         return sets;
     }
@@ -34,10 +48,8 @@ public class AppState {
         sets.add(set);
     }
 
-    // FIX #3: Add the missing 'deleteSet' method.
     public void deleteSet(String setId) {
         sets.removeIf(set -> set.getId().equals(setId));
-        // Also remove all notes associated with this set
         notes.removeIf(note -> note.getSetId().equals(setId));
     }
 
@@ -47,12 +59,10 @@ public class AppState {
                 .collect(Collectors.toList());
     }
 
-
     public void addNote(Note note) {
         notes.add(note);
     }
 
-    // FIX #4: Add the missing 'deleteNote' method.
     public void deleteNote(String noteId) {
         notes.removeIf(note -> note.getId().equals(noteId));
     }

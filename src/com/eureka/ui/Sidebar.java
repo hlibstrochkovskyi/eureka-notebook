@@ -6,62 +6,53 @@ import com.eureka.model.NoteSet;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Sidebar extends JPanel {
-
-    private final JPanel setsListPanel;
+    private final JPanel setsPanel;
     private final AppState appState;
+    private final List<SetRow> setRows;
     private final NoteSelectionListener noteSelectionListener;
 
     public Sidebar(NoteSelectionListener listener) {
         this.noteSelectionListener = listener;
-        // Set the layout for the sidebar
-        setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(280, 0));
-        setBackground(new Color(0xF4F4F5)); // Light gray background
-        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.LIGHT_GRAY));
-
         this.appState = AppState.getInstance();
+        this.setRows = new ArrayList<>();
 
-        // Create a panel for the top part of the sidebar
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 12));
-        topPanel.setOpaque(false); // Make it transparent to show sidebar background
+        setLayout(new BorderLayout());
+        setBackground(new Color(0xF4F4F5));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0xE5E7EB)));
 
-        // Add the "New Set" button
         JButton newSetButton = new JButton("New Set");
         newSetButton.setBackground(new Color(0xE11D48));
         newSetButton.setForeground(Color.WHITE);
-        newSetButton.setFont(new Font("Arial", Font.BOLD, 14));
         newSetButton.setFocusPainted(false);
+        newSetButton.setFont(new Font("Arial", Font.BOLD, 14));
         newSetButton.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
-        newSetButton.addActionListener(e -> createNewSet());
-        topPanel.add(newSetButton);
 
-        add(topPanel, BorderLayout.NORTH);
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(newSetButton, BorderLayout.CENTER);
 
-        // This panel will hold the list of note sets
-        setsListPanel = new JPanel();
-        setsListPanel.setLayout(new BoxLayout(setsListPanel, BoxLayout.Y_AXIS));
-        setsListPanel.setOpaque(false);
-        setsListPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        add(buttonPanel, BorderLayout.NORTH);
 
+        setsPanel = new JPanel();
+        setsPanel.setLayout(new BoxLayout(setsPanel, BoxLayout.Y_AXIS));
+        setsPanel.setBackground(getBackground());
+        setsPanel.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 8));
 
-        // Use a scroll pane in case the list of sets gets long
-        JScrollPane scrollPane = new JScrollPane(setsListPanel);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setOpaque(false);
+        JScrollPane scrollPane = new JScrollPane(setsPanel);
+        scrollPane.setBorder(null);
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // Initial population of the sets list
+        newSetButton.addActionListener(e -> createNewSet());
+
         updateSetsList();
     }
 
-    /**
-     * Opens a dialog to get a name for a new set and adds it to the state.
-     */
     private void createNewSet() {
         String setName = JOptionPane.showInputDialog(this, "Enter Set Name:", "Create New Set", JOptionPane.PLAIN_MESSAGE);
         if (setName != null && !setName.trim().isEmpty()) {
@@ -71,25 +62,22 @@ public class Sidebar extends JPanel {
         }
     }
 
-    /**
-     * Clears and redraws the list of sets in the sidebar.
-     */
-    private void updateSetsList() {
-        setsListPanel.removeAll();
-        java.util.List<NoteSet> currentSets = appState.getSets();
+    public void updateSetsList() {
+        setsPanel.removeAll();
+        setRows.clear();
+        for (NoteSet set : appState.getSets()) {
+            SetRow setRow = new SetRow(set, noteSelectionListener, this::updateSetsList);
+            setRows.add(setRow);
 
-        if (currentSets.isEmpty()) {
-            JLabel emptyLabel = new JLabel("No sets created yet.");
-            emptyLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            emptyLabel.setForeground(Color.GRAY);
-            setsListPanel.add(emptyLabel);
-        } else {
-            for (NoteSet set : currentSets) {
-                setsListPanel.add(new SetRow(set, noteSelectionListener));
-            }
+            JPanel setRowContainer = new JPanel(new BorderLayout());
+            setRowContainer.setOpaque(false);
+            setRowContainer.add(setRow, BorderLayout.NORTH);
+            setRowContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, setRow.getPreferredSize().height));
+            setsPanel.add(setRowContainer);
+            setsPanel.add(Box.createRigidArea(new Dimension(0, 8)));
         }
-        // Refresh the panel
-        setsListPanel.revalidate();
-        setsListPanel.repaint();
+        setsPanel.revalidate();
+        setsPanel.repaint();
     }
 }
+

@@ -1,3 +1,4 @@
+// FIX #1: The package must be 'com.eureka.model'
 package com.eureka.model;
 
 import java.util.ArrayList;
@@ -5,7 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A singleton class to hold the application's state, such as lists of sets and notes.
+ * A Singleton class to hold the application's state (all notes and sets).
+ * This ensures that all parts of the app are working with the same data.
  */
 public class AppState {
     private static AppState instance;
@@ -17,11 +19,7 @@ public class AppState {
         notes = new ArrayList<>();
     }
 
-    /**
-     * Gets the single instance of the com.eureka.model.AppState.
-     * @return The com.eureka.model.AppState instance.
-     */
-    public static AppState getInstance() {
+    public static synchronized AppState getInstance() {
         if (instance == null) {
             instance = new AppState();
         }
@@ -29,19 +27,18 @@ public class AppState {
     }
 
     public List<NoteSet> getSets() {
-        return new ArrayList<>(sets); // Return a copy to prevent outside modification
+        return sets;
     }
 
     public void addSet(NoteSet set) {
-        if (set != null) {
-            sets.add(set);
-        }
+        sets.add(set);
     }
 
-    public void addNote(Note note) {
-        if (note != null) {
-            notes.add(note);
-        }
+    // FIX #3: Add the missing 'deleteSet' method.
+    public void deleteSet(String setId) {
+        sets.removeIf(set -> set.getId().equals(setId));
+        // Also remove all notes associated with this set
+        notes.removeIf(note -> note.getSetId().equals(setId));
     }
 
     public List<Note> getNotesForSet(String setId) {
@@ -50,10 +47,13 @@ public class AppState {
                 .collect(Collectors.toList());
     }
 
-    public Note getNoteById(String noteId) {
-        return notes.stream()
-                .filter(note -> note.getId().equals(noteId))
-                .findFirst()
-                .orElse(null);
+
+    public void addNote(Note note) {
+        notes.add(note);
+    }
+
+    // FIX #4: Add the missing 'deleteNote' method.
+    public void deleteNote(String noteId) {
+        notes.removeIf(note -> note.getId().equals(noteId));
     }
 }

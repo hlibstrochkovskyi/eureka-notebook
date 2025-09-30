@@ -9,132 +9,109 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
-/**
- * A UI component that displays a single note set in the sidebar.
- */
 public class SetRow extends JPanel {
-
     private final NoteSet noteSet;
     private final JPanel notesPanel;
-    private boolean isExpanded = false;
-    private final AppState appState;
     private final NoteSelectionListener noteSelectionListener;
+    private final AppState appState;
+    private boolean isExpanded = false;
 
-    public SetRow(NoteSet noteSet, NoteSelectionListener listener) {
+    public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetDeletedCallback) {
         this.noteSet = noteSet;
-        this.appState = AppState.getInstance();
         this.noteSelectionListener = listener;
+        this.appState = AppState.getInstance();
 
-        setLayout(new BorderLayout());
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setOpaque(false);
 
-        // Main row for the set name and buttons
-        JPanel mainRow = new JPanel(new BorderLayout(10, 0));
-        mainRow.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        mainRow.setOpaque(false);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(0xE5E7EB));
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 
-        JLabel nameLabel = new JLabel(noteSet.getName());
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        nameLabel.setIcon(UIManager.getIcon("Tree.closedIcon"));
+        JLabel setNameLabel = new JLabel(noteSet.getName());
+        setNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        setNameLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
-        // Panel for action buttons
-        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        actionsPanel.setOpaque(false);
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 4));
+        buttonsPanel.setOpaque(false);
+
         JButton addButton = new JButton("+");
-        JButton moreButton = new JButton("...");
+        JButton deleteButton = new JButton("x");
 
-        styleActionButton(addButton);
-        styleActionButton(moreButton);
+        buttonsPanel.add(addButton);
+        buttonsPanel.add(deleteButton);
 
-        actionsPanel.add(addButton);
-        actionsPanel.add(moreButton);
+        headerPanel.add(setNameLabel, BorderLayout.CENTER);
+        headerPanel.add(buttonsPanel, BorderLayout.EAST);
 
-        mainRow.add(nameLabel, BorderLayout.CENTER);
-        mainRow.add(actionsPanel, BorderLayout.EAST);
-
-        // Panel to hold notes for this set, initially hidden
         notesPanel = new JPanel();
         notesPanel.setLayout(new BoxLayout(notesPanel, BoxLayout.Y_AXIS));
-        notesPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 5));
         notesPanel.setOpaque(false);
+        notesPanel.setBorder(BorderFactory.createEmptyBorder(4, 15, 4, 4));
         notesPanel.setVisible(false);
 
-        // This panel holds both the main row and the notes panel
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.setOpaque(false);
-        container.add(mainRow);
-        container.add(notesPanel);
+        add(headerPanel);
+        add(notesPanel);
 
-        add(container, BorderLayout.CENTER);
-
-        // Add listeners
-        mainRow.addMouseListener(new MouseAdapter() {
+        headerPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                toggleExpansion();
+                toggleExpand();
             }
         });
 
-        addButton.addActionListener(e -> createNewNote());
+        addButton.addActionListener(e -> addNewNote());
 
-        updateNotesList();
+        deleteButton.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "Delete the set '" + noteSet.getName() + "' and all its notes?",
+                    "Delete Set",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                appState.deleteSet(noteSet.getId());
+                noteSelectionListener.onSetDeleted(noteSet.getId());
+                onSetDeletedCallback.run();
+            }
+        });
     }
 
-    private void toggleExpansion() {
+    private void toggleExpand() {
         isExpanded = !isExpanded;
         notesPanel.setVisible(isExpanded);
-        // Update icon - pseudo-code
-        JLabel label = (JLabel) ((JPanel) getComponent(0)).getComponent(0);
-        label.setIcon(isExpanded ? UIManager.getIcon("Tree.openIcon") : UIManager.getIcon("Tree.closedIcon"));
-
-        // We need to revalidate the parent to reflect size changes
-        getParent().revalidate();
-        getParent().repaint();
+        if (isExpanded) {
+            refreshNotesList();
+        }
+        revalidate();
+        repaint();
     }
 
-    private void createNewNote() {
-        String noteTitle = JOptionPane.showInputDialog(this, "Enter com.eureka.model.Note Title:", "Create New com.eureka.model.Note", JOptionPane.PLAIN_MESSAGE);
+    private void addNewNote() {
+        if (!isExpanded) {
+            toggleExpand();
+        }
+        String noteTitle = JOptionPane.showInputDialog(this, "Enter Note Title:", "Create New Note", JOptionPane.PLAIN_MESSAGE);
         if (noteTitle != null && !noteTitle.trim().isEmpty()) {
             Note newNote = new Note(noteSet.getId(), noteTitle.trim());
             appState.addNote(newNote);
-            updateNotesList();
-            if (!isExpanded) {
-                toggleExpansion();
-            }
+            refreshNotesList();
+            noteSelectionListener.onNoteSelected(newNote);
         }
     }
 
-    private void updateNotesList() {
+    private void refreshNotesList() {
         notesPanel.removeAll();
-        java.util.List<Note> notes = appState.getNotesForSet(noteSet.getId());
-        if (notes.isEmpty()) {
-            JLabel emptyLabel = new JLabel("No notes in this set.");
-            emptyLabel.setFont(new Font("Arial", Font.ITALIC, 12));
-            emptyLabel.setForeground(Color.GRAY);
-            notesPanel.add(emptyLabel);
-        } else {
-            for (Note note : notes) {
-                NoteRow noteRow = new NoteRow(note);
-                noteRow.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (noteSelectionListener != null) {
-                            noteSelectionListener.onNoteSelected(note);
-                        }
-                    }
-                });
-                notesPanel.add(noteRow);
-            }
+        List<Note> notesInSet = appState.getNotesForSet(noteSet.getId());
+        for (Note note : notesInSet) {
+            NoteRow noteRow = new NoteRow(note, noteSelectionListener, this::refreshNotesList);
+            notesPanel.add(noteRow);
+            notesPanel.add(Box.createRigidArea(new Dimension(0, 4)));
         }
         notesPanel.revalidate();
         notesPanel.repaint();
     }
-
-    private void styleActionButton(JButton button) {
-        button.setMargin(new Insets(2, 5, 2, 5));
-        button.setFocusPainted(false);
-    }
 }
-

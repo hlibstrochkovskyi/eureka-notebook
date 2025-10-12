@@ -1,11 +1,6 @@
 {
   "sets": [
     {
-      "id": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
-      "name": "Math",
-      "createdAt": 1759213185435
-    },
-    {
       "id": "4d4edf31-f4ba-4cf3-8e04-baedb52f9814",
       "name": "????",
       "createdAt": 1760295638530
@@ -91,27 +86,15 @@
       "createdAt": 1760296568434
     },
     {
-      "id": "aa968b59-61e3-4afa-b573-6f05a92f1e10",
-      "name": "??????",
-      "createdAt": 1760296857571
-    }
-  ],
-  "notes": [
-    {
-      "id": "241b7b38-1723-4b9c-933a-0033a7d78847",
-      "setId": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
-      "title": "Functions",
-      "content": "what are functions?",
-      "createdAt": 1759213190257,
-      "updatedAt": 1759213201311
+      "id": "d0cc5d5a-7c0b-4f54-b6bf-b337c476693e",
+      "name": "c",
+      "createdAt": 1760299970809
     },
     {
-      "id": "02e5f8ee-c413-41fa-8d73-cba21bccd42f",
-      "setId": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
-      "title": "Algebra",
-      "content": "Algebra sucks",
-      "createdAt": 1759213209227,
-      "updatedAt": 1759213214261
+      "id": "9a4e6871-3387-4c2e-bf35-b71c69b0bda0",
+      "name": "trubai",
+      "createdAt": 1760299990447
     }
-  ]
+  ],
+  "notes": []
 }

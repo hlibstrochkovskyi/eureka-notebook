@@ -6,20 +6,19 @@ import com.eureka.model.Note;
 import com.eureka.model.NoteSet;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+
 import java.util.List;
 import java.util.Optional;
 
-/**
- * A JavaFX component that represents a single, expandable row for a NoteSet in the sidebar.
- */
 public class SetRow extends VBox {
 
     private final NoteSet noteSet;
@@ -29,31 +28,36 @@ public class SetRow extends VBox {
     private boolean isExpanded = false;
     private final Runnable onSetDeletedCallback;
 
+    // We make the label a field of the class to easily access it from any method
+    private final Label setNameLabel;
+
     public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetDeletedCallback) {
         this.noteSet = noteSet;
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
         this.onSetDeletedCallback = onSetDeletedCallback;
 
-        // Header for the set (name and buttons)
-        BorderPane headerPanel = new BorderPane();
-        headerPanel.setStyle("-fx-background-color: #e5e7eb; -fx-background-radius: 5; -fx-cursor: hand;");
+        HBox headerPanel = new HBox();
+        headerPanel.setAlignment(Pos.CENTER_LEFT);
         headerPanel.setPadding(new Insets(4, 8, 4, 12));
+        headerPanel.setStyle("-fx-background-color: #e5e7eb; -fx-background-radius: 5; -fx-cursor: hand;");
 
-        Label setNameLabel = new Label("▶ " + noteSet.getName());
-        setNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        // Initialize the field instead of a local variable
+        this.setNameLabel = new Label("▶ " + noteSet.getName());
+        this.setNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        this.setNameLabel.setMaxWidth(Double.MAX_VALUE);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button addButton = new Button("+");
         addButton.setStyle("-fx-cursor: default;");
         Button deleteButton = new Button("×");
         deleteButton.setStyle("-fx-cursor: default;");
         HBox buttonsPanel = new HBox(4, addButton, deleteButton);
-        buttonsPanel.setAlignment(Pos.CENTER);
 
-        headerPanel.setLeft(setNameLabel);
-        headerPanel.setRight(buttonsPanel);
+        headerPanel.getChildren().addAll(setNameLabel, spacer, buttonsPanel);
 
-        // This panel will hold the list of notes for this set
         notesPanel = new VBox(4);
         notesPanel.setPadding(new Insets(8, 0, 0, 15));
         notesPanel.setVisible(false);
@@ -61,20 +65,19 @@ public class SetRow extends VBox {
 
         this.getChildren().addAll(headerPanel, notesPanel);
 
-        // --- Event Handlers ---
         headerPanel.setOnMouseClicked(event -> {
-            // Prevent expand/collapse when clicking on buttons
-            if (event.getTarget() != addButton && event.getTarget() != deleteButton) {
-                toggleExpand(setNameLabel);
+            if (!(event.getTarget() instanceof Button)) {
+                toggleExpand();
             }
         });
         addButton.setOnAction(event -> addNewNote());
         deleteButton.setOnAction(event -> deleteSet());
     }
 
-    private void toggleExpand(Label label) {
+    private void toggleExpand() {
         isExpanded = !isExpanded;
-        label.setText((isExpanded ? "▼ " : "▶ ") + noteSet.getName()); // Change arrow
+        // Now we can directly access the field
+        setNameLabel.setText((isExpanded ? "▼ " : "▶ ") + noteSet.getName());
         notesPanel.setVisible(isExpanded);
         notesPanel.setManaged(isExpanded);
         if (isExpanded) {
@@ -83,10 +86,9 @@ public class SetRow extends VBox {
     }
 
     private void addNewNote() {
-        // This is a bit of a workaround to get the label to update if the panel is closed
-        Label label = (Label)((BorderPane)this.getChildren().get(0)).getLeft();
+        // THE FIX: No more casting! We just use the field directly.
         if (!isExpanded) {
-            toggleExpand(label);
+            toggleExpand();
         }
 
         TextInputDialog dialog = new TextInputDialog();
@@ -113,25 +115,18 @@ public class SetRow extends VBox {
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            // Important: We need a copy because the original list will be modified
             List<Note> notesToDelete = List.copyOf(appState.getNotesForSet(noteSet.getId()));
-
             appState.deleteSet(noteSet.getId());
             noteSelectionListener.onSetDeleted(noteSet.getId(), notesToDelete);
             onSetDeletedCallback.run();
         }
     }
 
-    /**
-     * Clears and re-populates the list of notes for this set.
-     * If there are no notes, it displays a message.
-     */
     private void refreshNotesList() {
         notesPanel.getChildren().clear();
         List<Note> notesInSet = appState.getNotesForSet(noteSet.getId());
 
         if (notesInSet.isEmpty()) {
-            // THIS IS THE FIX: Show a message if the set is empty
             Label emptyLabel = new Label("This set is empty.");
             emptyLabel.setStyle("-fx-text-fill: grey; -fx-padding: 5;");
             notesPanel.getChildren().add(emptyLabel);
@@ -142,7 +137,7 @@ public class SetRow extends VBox {
             }
         }
     }
-    // Method to get all NoteRow children
+
     public List<NoteRow> getNoteRows() {
         return notesPanel.getChildren().stream()
                 .filter(node -> node instanceof NoteRow)

@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public class Sidebar extends BorderPane {
 
-    private final VBox setsPanel; // Панель для отображения списков заметок
+    private final VBox setsPanel; // pannel to show sets panel
     private final AppState appState;
     private final NoteSelectionListener noteSelectionListener;
 

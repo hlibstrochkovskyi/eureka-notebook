@@ -14,7 +14,6 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -28,8 +27,6 @@ public class SetRow extends VBox {
     private final NoteSelectionListener noteSelectionListener;
     private final AppState appState;
     private boolean isExpanded = false;
-
-    // A callback to notify the parent (Sidebar) that it needs to refresh.
     private final Runnable onSetDeletedCallback;
 
     public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetDeletedCallback) {
@@ -40,15 +37,16 @@ public class SetRow extends VBox {
 
         // Header for the set (name and buttons)
         BorderPane headerPanel = new BorderPane();
-        headerPanel.setStyle("-fx-background-color: #e5e7eb; -fx-background-radius: 5;");
+        headerPanel.setStyle("-fx-background-color: #e5e7eb; -fx-background-radius: 5; -fx-cursor: hand;");
         headerPanel.setPadding(new Insets(4, 8, 4, 12));
 
-        Label setNameLabel = new Label(noteSet.getName());
+        Label setNameLabel = new Label("▶ " + noteSet.getName());
         setNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-        // Buttons (+ and x)
         Button addButton = new Button("+");
-        Button deleteButton = new Button("×"); // A better-looking 'x'
+        addButton.setStyle("-fx-cursor: default;");
+        Button deleteButton = new Button("×");
+        deleteButton.setStyle("-fx-cursor: default;");
         HBox buttonsPanel = new HBox(4, addButton, deleteButton);
         buttonsPanel.setAlignment(Pos.CENTER);
 
@@ -58,47 +56,42 @@ public class SetRow extends VBox {
         // This panel will hold the list of notes for this set
         notesPanel = new VBox(4);
         notesPanel.setPadding(new Insets(8, 0, 0, 15));
-        notesPanel.setVisible(false); // Initially hidden
-        notesPanel.setManaged(false); // Don't take up space when hidden
+        notesPanel.setVisible(false);
+        notesPanel.setManaged(false);
 
-        // Add header and notes panel to the main VBox
         this.getChildren().addAll(headerPanel, notesPanel);
 
         // --- Event Handlers ---
-
-        // Click on the header to expand/collapse
-        headerPanel.setOnMouseClicked(event -> toggleExpand());
-
-        // Click on the '+' button to add a new note
+        headerPanel.setOnMouseClicked(event -> {
+            // Prevent expand/collapse when clicking on buttons
+            if (event.getTarget() != addButton && event.getTarget() != deleteButton) {
+                toggleExpand(setNameLabel);
+            }
+        });
         addButton.setOnAction(event -> addNewNote());
-
-        // Click on the 'x' button to delete the set
         deleteButton.setOnAction(event -> deleteSet());
     }
 
-    /**
-     * Toggles the visibility of the notes list panel.
-     */
-    private void toggleExpand() {
+    private void toggleExpand(Label label) {
         isExpanded = !isExpanded;
+        label.setText((isExpanded ? "▼ " : "▶ ") + noteSet.getName()); // Change arrow
         notesPanel.setVisible(isExpanded);
-        notesPanel.setManaged(isExpanded); // Manage layout space
+        notesPanel.setManaged(isExpanded);
         if (isExpanded) {
             refreshNotesList();
         }
     }
 
-    /**
-     * Opens a dialog to create a new note within this set.
-     */
     private void addNewNote() {
+        // This is a bit of a workaround to get the label to update if the panel is closed
+        Label label = (Label)((BorderPane)this.getChildren().get(0)).getLeft();
         if (!isExpanded) {
-            toggleExpand();
+            toggleExpand(label);
         }
 
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Create New Note");
-        dialog.setHeaderText("Enter title for the new note in \"" + noteSet.getName() + "\":");
+        dialog.setHeaderText("Enter title for note in \"" + noteSet.getName() + "\":");
         dialog.setContentText("Title:");
 
         Optional<String> result = dialog.showAndWait();
@@ -107,42 +100,53 @@ public class SetRow extends VBox {
                 Note newNote = new Note(noteSet.getId(), title.trim());
                 appState.addNote(newNote);
                 refreshNotesList();
-                noteSelectionListener.onNoteSelected(newNote); // Open the new note
+                noteSelectionListener.onNoteSelected(newNote);
             }
         });
     }
 
-    /**
-     * Opens a confirmation dialog and deletes the entire set if confirmed.
-     */
     private void deleteSet() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Set");
         alert.setHeaderText("Delete the set \"" + noteSet.getName() + "\"?");
-        alert.setContentText("Are you sure? This will permanently delete the set and all notes within it.");
+        alert.setContentText("This will permanently delete the set and all notes within it.");
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Important: We need a copy because the original list will be modified
+            List<Note> notesToDelete = List.copyOf(appState.getNotesForSet(noteSet.getId()));
+
             appState.deleteSet(noteSet.getId());
-
-            // Notify the EditorContainer to close any tabs from this set
-            noteSelectionListener.onSetDeleted(noteSet.getId());
-
-            // Notify the Sidebar to refresh its list
+            noteSelectionListener.onSetDeleted(noteSet.getId(), notesToDelete);
             onSetDeletedCallback.run();
         }
     }
 
     /**
      * Clears and re-populates the list of notes for this set.
+     * If there are no notes, it displays a message.
      */
     private void refreshNotesList() {
         notesPanel.getChildren().clear();
         List<Note> notesInSet = appState.getNotesForSet(noteSet.getId());
-        for (Note note : notesInSet) {
-            // Now we use our new JavaFX NoteRow
-            NoteRow noteRow = new NoteRow(note, noteSelectionListener, this::refreshNotesList);
-            notesPanel.getChildren().add(noteRow);
+
+        if (notesInSet.isEmpty()) {
+            // THIS IS THE FIX: Show a message if the set is empty
+            Label emptyLabel = new Label("This set is empty.");
+            emptyLabel.setStyle("-fx-text-fill: grey; -fx-padding: 5;");
+            notesPanel.getChildren().add(emptyLabel);
+        } else {
+            for (Note note : notesInSet) {
+                NoteRow noteRow = new NoteRow(note, noteSelectionListener, this::refreshNotesList);
+                notesPanel.getChildren().add(noteRow);
+            }
         }
     }
+    // Method to get all NoteRow children
+    public List<NoteRow> getNoteRows() {
+        return notesPanel.getChildren().stream()
+                .filter(node -> node instanceof NoteRow)
+                .map(node -> (NoteRow) node)
+                .toList();
     }
+}

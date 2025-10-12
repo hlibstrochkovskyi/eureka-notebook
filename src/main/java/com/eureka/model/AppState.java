@@ -2,6 +2,7 @@ package com.eureka.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AppState {
@@ -66,4 +67,9 @@ public class AppState {
     public void deleteNote(String noteId) {
         notes.removeIf(note -> note.getId().equals(noteId));
     }
+
+    public Optional<Note> getNoteById(String noteId) {
+        return notes.stream().filter(note -> note.getId().equals(noteId)).findFirst();
+    }
+
 }

@@ -95,21 +95,26 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
         }
     }
 
-    // Replace this method in EditorContainer.java
 
-// Replace this method in EditorContainer.java
+
+
+
+    @Override
+    public void onNoteRenamed(Note renamedNote) {
+        if (renamedNote != null && openTabsMap.containsKey(renamedNote.getId())) {
+            Tab tabToUpdate = openTabsMap.get(renamedNote.getId());
+            tabToUpdate.setText(renamedNote.getTitle());
+        }
+    }
+
 
     private void updateSidebarHighlighting() {
         if (sidebar != null) {
             Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
             if (selectedTab != null) {
                 Optional<Note> activeNoteOpt = AppState.getInstance().getNoteById(selectedTab.getId());
-
-                // This is the only line you need here:
                 sidebar.updateNoteHighlighting(activeNoteOpt.orElse(null));
-
             } else {
-                // If no tab is selected, pass null to clear highlighting.
                 sidebar.updateNoteHighlighting(null);
             }
         }

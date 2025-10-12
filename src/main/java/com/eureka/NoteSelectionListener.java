@@ -8,5 +8,9 @@ public interface NoteSelectionListener {
     void onNoteDeleted(Note deletedNote);
     // Pass the list of notes that were deleted along with the set
     void onSetDeleted(String setId, List<Note> deletedNotes);
+
+    // Add this method to the interface
+    void onNoteRenamed(Note renamedNote);
+
 }
 

@@ -5,15 +5,12 @@ import java.util.List;
 
 public interface NoteSelectionListener {
     void onNoteSelected(Note note);
+
     void onNoteDeleted(Note deletedNote);
-    // Pass the list of notes that were deleted along with the set
+
     void onSetDeleted(String setId, List<Note> deletedNotes);
 
-    // Add this method to the interface
     void onNoteRenamed(Note renamedNote);
 
-    void onNoteSelectedFromSearch(Note note, int position, String query);
-
-
+    void onNoteSelectedFromSearch(Note note, int position, int wordIndex, String query);
 }
-

@@ -5,18 +5,14 @@ import com.eureka.ui.EditorContainer;
 import com.eureka.ui.Sidebar;
 import com.eureka.ui.ThemeManager;
 import com.eureka.ui.TopBar;
-// Remove or comment out this line in EurekaApp.java
-// import com.eureka.ui.ThemeManager;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-
 
 public class EurekaApp extends Application {
 
@@ -26,41 +22,43 @@ public class EurekaApp extends Application {
     public void start(Stage primaryStage) {
         AppState.loadInstance(DataStorageService.loadData());
 
-        // Initialize SearchService
         try {
             searchService = new SearchService(Paths.get(System.getProperty("user.home"), ".eureka"));
         } catch (IOException e) {
             e.printStackTrace();
+            // Handle error gracefully
+            return;
         }
 
-        // --- Layout Setup ---
-        // Main content layout
-        BorderPane mainContentPane = new BorderPane();
+        // --- Use BorderPane as the root layout ---
+        BorderPane rootLayout = new BorderPane();
 
         // Components
         EditorContainer editorContainer = new EditorContainer();
         Sidebar sidebar = new Sidebar(editorContainer);
         editorContainer.setSidebar(sidebar);
 
-        // The TopBar now needs a reference to the NoteSelectionListener to handle clicks
+        // The new TopBar no longer needs a reference to the root pane
         TopBar topBar = new TopBar(editorContainer);
 
-        mainContentPane.setTop(topBar);
+        rootLayout.setTop(topBar);
         SplitPane splitPane = new SplitPane(sidebar, editorContainer);
         splitPane.setDividerPositions(0.30);
-        mainContentPane.setCenter(splitPane);
-
-        // The root is a StackPane to allow search results to overlay the content
-        StackPane rootLayout = new StackPane();
-        rootLayout.getChildren().add(mainContentPane);
-
-        // The TopBar will add the search results list to this root pane
-        topBar.setRootPane(rootLayout);
+        rootLayout.setCenter(splitPane);
 
         // --- Scene and Stage ---
         Scene scene = new Scene(rootLayout, 1200, 800);
-        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        ThemeManager.initialize(scene);
+
+        // Safely get and add the stylesheet
+        String cssPath = getClass().getResource("/styles.css").toExternalForm();
+        if (cssPath != null) {
+            scene.getStylesheets().add(cssPath);
+        } else {
+            System.err.println("Warning: styles.css not found.");
+        }
+
+        // ThemeManager call is ready for when you want to implement it
+        // ThemeManager.initialize(scene);
 
         primaryStage.setTitle("Eureka");
         primaryStage.setScene(scene);

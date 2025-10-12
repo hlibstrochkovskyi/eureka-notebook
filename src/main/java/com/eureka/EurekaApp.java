@@ -1,39 +1,66 @@
 package com.eureka;
 
 import com.eureka.model.AppState;
-import com.eureka.ui.EditorContainer; // Импортируем заглушку EditorContainer
+import com.eureka.ui.EditorContainer;
 import com.eureka.ui.Sidebar;
+import com.eureka.ui.ThemeManager;
+import com.eureka.ui.TopBar;
+// Remove or comment out this line in EurekaApp.java
+// import com.eureka.ui.ThemeManager;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+
 
 public class EurekaApp extends Application {
 
+    private static SearchService searchService;
 
-    // Replace the entire start() method in EurekaApp.java with this corrected version.
-    // Replace the start method with this
     @Override
     public void start(Stage primaryStage) {
         AppState.loadInstance(DataStorageService.loadData());
 
-        // 1. Create the components
-        EditorContainer editorContainer = new EditorContainer();
-        Sidebar sidebar = new Sidebar(editorContainer); // Pass the editor as a listener
+        // Initialize SearchService
+        try {
+            searchService = new SearchService(Paths.get(System.getProperty("user.home"), ".eureka"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        // 2. Link them back so the editor can talk to the sidebar
+        // --- Layout Setup ---
+        // Main content layout
+        BorderPane mainContentPane = new BorderPane();
+
+        // Components
+        EditorContainer editorContainer = new EditorContainer();
+        Sidebar sidebar = new Sidebar(editorContainer);
         editorContainer.setSidebar(sidebar);
 
-        // 3. Assemble the main layout
-        BorderPane rootLayout = new BorderPane();
+        // The TopBar now needs a reference to the NoteSelectionListener to handle clicks
+        TopBar topBar = new TopBar(editorContainer);
+
+        mainContentPane.setTop(topBar);
         SplitPane splitPane = new SplitPane(sidebar, editorContainer);
         splitPane.setDividerPositions(0.30);
-        rootLayout.setCenter(splitPane);
+        mainContentPane.setCenter(splitPane);
 
-        // 4. Create and show the scene
+        // The root is a StackPane to allow search results to overlay the content
+        StackPane rootLayout = new StackPane();
+        rootLayout.getChildren().add(mainContentPane);
+
+        // The TopBar will add the search results list to this root pane
+        topBar.setRootPane(rootLayout);
+
+        // --- Scene and Stage ---
         Scene scene = new Scene(rootLayout, 1200, 800);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        ThemeManager.initialize(scene);
 
         primaryStage.setTitle("Eureka");
         primaryStage.setScene(scene);
@@ -43,7 +70,10 @@ public class EurekaApp extends Application {
     @Override
     public void stop() {
         DataStorageService.saveData(AppState.getInstance());
-        System.out.println("Application is closing, data saved.");
+    }
+
+    public static SearchService getSearchService() {
+        return searchService;
     }
 
     public static void main(String[] args) {

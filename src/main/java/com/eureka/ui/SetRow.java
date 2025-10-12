@@ -1,5 +1,6 @@
 package com.eureka.ui;
 
+import com.eureka.EurekaApp;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
@@ -101,6 +102,7 @@ public class SetRow extends VBox {
             if (!title.trim().isEmpty()) {
                 Note newNote = new Note(noteSet.getId(), title.trim());
                 appState.addNote(newNote);
+                EurekaApp.getSearchService().addOrUpdateNote(newNote);
                 refreshNotesList();
                 noteSelectionListener.onNoteSelected(newNote);
             }
@@ -116,10 +118,17 @@ public class SetRow extends VBox {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             List<Note> notesToDelete = List.copyOf(appState.getNotesForSet(noteSet.getId()));
+
+            // Delete from search index BEFORE deleting from AppState
+            notesToDelete.forEach(note -> EurekaApp.getSearchService().deleteNote(note));
+
             appState.deleteSet(noteSet.getId());
             noteSelectionListener.onSetDeleted(noteSet.getId(), notesToDelete);
             onSetDeletedCallback.run();
         }
+
+
+
     }
 
     private void refreshNotesList() {
@@ -137,6 +146,20 @@ public class SetRow extends VBox {
             }
         }
     }
+
+    public NoteSet getNoteSet() {
+        return noteSet;
+    }
+
+    public void expand() {
+        if (!isExpanded) {
+            toggleExpand();
+        }
+    }
+
+
+
+
 
     public List<NoteRow> getNoteRows() {
         return notesPanel.getChildren().stream()

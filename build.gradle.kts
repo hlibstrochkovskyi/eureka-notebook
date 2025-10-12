@@ -24,6 +24,12 @@ dependencies {
 
     // Google's GSON library for JSON serialization and deserialization.
     implementation("com.google.code.gson:gson:2.10.1")
+
+
+    // Apache Lucene libraries for text searching and indexing.
+    implementation("org.apache.lucene:lucene-core:9.9.1")
+    implementation("org.apache.lucene:lucene-analyzers-common:8.11.3")
+    implementation("org.apache.lucene:lucene-queryparser:9.9.1")
 }
 
 // Configure the JavaFX plugin.

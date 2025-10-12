@@ -1,5 +1,6 @@
 package com.eureka.ui;
 
+import com.eureka.EurekaApp;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javafx.application.Platform;
+
 
 public class EditorContainer extends BorderPane implements NoteSelectionListener {
 
@@ -49,16 +52,18 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
     @Override
     public void onNoteSelected(Note note) {
         if (note == null) return;
+
+        // As per FEAT-010, if the set is closed, it should be expanded
+        if (sidebar != null) {
+            sidebar.expandSetForNote(note);
+        }
+
         if (openTabsMap.containsKey(note.getId())) {
             tabPane.getSelectionModel().select(openTabsMap.get(note.getId()));
         } else {
             createNewTab(note);
         }
     }
-
-    // ... (остальные методы createNewTab, onNoteDeleted, onSetDeleted) ...
-    // Оставьте их такими, какими они были в предыдущей версии.
-    // Я скопирую их сюда для удобства.
 
     private void createNewTab(Note note) {
         Tab tab = new Tab(note.getTitle());
@@ -72,6 +77,8 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
             if (!Objects.equals(note.getContent(), newText)) {
                 note.setContent(newText);
                 note.setUpdatedAt(System.currentTimeMillis());
+                // Update the search index when content changes
+                EurekaApp.getSearchService().addOrUpdateNote(note);
             }
         });
 
@@ -95,16 +102,38 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
         }
     }
 
-
-
-
-
+    /**
+     * This method is required by the NoteSelectionListener interface.
+     * It finds the open tab corresponding to the renamed note and updates its title.
+     */
     @Override
     public void onNoteRenamed(Note renamedNote) {
-        if (renamedNote != null && openTabsMap.containsKey(renamedNote.getId())) {
-            Tab tabToUpdate = openTabsMap.get(renamedNote.getId());
+        if (renamedNote == null) return;
+
+        Tab tabToUpdate = openTabsMap.get(renamedNote.getId());
+        if (tabToUpdate != null) {
             tabToUpdate.setText(renamedNote.getTitle());
         }
+        // Also update search index
+        EurekaApp.getSearchService().addOrUpdateNote(renamedNote);
+    }
+
+    // Replace the old version with this corrected method in EditorContainer.java
+    @Override
+    public void onNoteSelectedFromSearch(Note note, int position, String query) {
+        onNoteSelected(note);
+
+        tabPane.requestFocus();
+
+        Platform.runLater(() -> {
+            Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+            if (selectedTab != null && selectedTab.getContent() instanceof TextArea editorArea) {
+                editorArea.requestFocus();
+                // Scroll to the position and select the text
+                editorArea.selectRange(position, position + query.length());
+                
+            }
+        });
     }
 
 
@@ -119,5 +148,4 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
             }
         }
     }
-
 }

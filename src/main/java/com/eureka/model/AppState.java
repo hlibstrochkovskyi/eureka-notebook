@@ -54,6 +54,18 @@ public class AppState {
         notes.removeIf(note -> note.getSetId().equals(setId));
     }
 
+
+    // Add these two new methods to your AppState.java class
+
+    public Optional<NoteSet> getSetById(String setId) {
+        return sets.stream().filter(set -> set.getId().equals(setId)).findFirst();
+    }
+
+    public List<Note> getAllNotes() {
+        return new ArrayList<>(notes);
+    }
+
+
     public List<Note> getNotesForSet(String setId) {
         return notes.stream()
                 .filter(note -> note.getSetId().equals(setId))

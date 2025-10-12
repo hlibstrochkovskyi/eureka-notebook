@@ -12,5 +12,8 @@ public interface NoteSelectionListener {
     // Add this method to the interface
     void onNoteRenamed(Note renamedNote);
 
+    void onNoteSelectedFromSearch(Note note, int position, String query);
+
+
 }
 

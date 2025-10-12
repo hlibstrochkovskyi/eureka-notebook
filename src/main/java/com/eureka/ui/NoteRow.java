@@ -1,5 +1,6 @@
 package com.eureka.ui;
 
+import com.eureka.EurekaApp;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
@@ -79,6 +80,7 @@ public class NoteRow extends BorderPane {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             appState.deleteNote(note.getId());
+            EurekaApp.getSearchService().deleteNote(note);
             noteSelectionListener.onNoteDeleted(note);
             onNoteChangedCallback.run();
         }

@@ -84,6 +84,26 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    // Add this method inside Sidebar.java
+
+    /**
+     * Finds the corresponding SetRow for a note and expands it.
+     * This is crucial for the search functionality.
+     */
+    public void expandSetForNote(Note note) {
+        if (note == null) return;
+        String setId = note.getSetId();
+        for (var child : setsPanel.getChildren()) {
+            if (child instanceof SetRow setRow) {
+                if (setRow.getNoteSet().getId().equals(setId)) {
+                    setRow.expand();
+                    break; // Found and expanded, no need to continue
+                }
+            }
+        }
+    }
+
+
     /**
      * Updates the highlighting of note rows based on the currently active note.
      */

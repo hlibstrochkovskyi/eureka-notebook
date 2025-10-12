@@ -3,81 +3,88 @@ package com.eureka.ui;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.NoteSet;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.TextInputDialog;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
-public class Sidebar extends JPanel {
-    private final JPanel setsPanel;
+public class Sidebar extends BorderPane {
+
+    private final VBox setsPanel; // Панель для отображения списков заметок
     private final AppState appState;
-    private final List<SetRow> setRows;
     private final NoteSelectionListener noteSelectionListener;
 
     public Sidebar(NoteSelectionListener listener) {
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
-        this.setRows = new ArrayList<>();
 
-        setLayout(new BorderLayout());
-        setBackground(new Color(0xF4F4F5));
-        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0xE5E7EB)));
+        // Стилизация и настройка основной панели
+        this.setPadding(new Insets(12));
+        this.setStyle("-fx-background-color: #f4f4f5; -fx-border-width: 0 1 0 0; -fx-border-color: #e5e7eb;");
+        this.setPrefWidth(280);
 
-        JButton newSetButton = new JButton("New Set");
-        newSetButton.setBackground(new Color(0xE11D48));
-        newSetButton.setForeground(Color.WHITE);
-        newSetButton.setFocusPainted(false);
-        newSetButton.setFont(new Font("Arial", Font.BOLD, 14));
-        newSetButton.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+        // 1. Кнопка "New Set"
+        Button newSetButton = new Button("New Set");
+        newSetButton.setMaxWidth(Double.MAX_VALUE); // Растянуть на всю ширину
+        newSetButton.setStyle("-fx-background-color: #e11d48; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+        newSetButton.setOnAction(e -> createNewSet()); // Обработчик нажатия
 
-        JPanel buttonPanel = new JPanel(new BorderLayout());
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(newSetButton, BorderLayout.CENTER);
+        this.setTop(newSetButton); // Размещаем кнопку вверху
 
-        add(buttonPanel, BorderLayout.NORTH);
+        // 2. Панель для списков заметок с прокруткой
+        setsPanel = new VBox(8); // VBox с отступом 8px между элементами
+        setsPanel.setPadding(new Insets(12, 0, 0, 0));
 
-        setsPanel = new JPanel();
-        setsPanel.setLayout(new BoxLayout(setsPanel, BoxLayout.Y_AXIS));
-        setsPanel.setBackground(getBackground());
-        setsPanel.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 8));
+        ScrollPane scrollPane = new ScrollPane(setsPanel);
+        scrollPane.setFitToWidth(true); // Растягивать контент по ширине
+        scrollPane.setStyle("-fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); // Отключить горизонтальную прокрутку
 
-        JScrollPane scrollPane = new JScrollPane(setsPanel);
-        scrollPane.setBorder(null);
+        this.setCenter(scrollPane); // Размещаем панель с прокруткой в центре
 
-        add(scrollPane, BorderLayout.CENTER);
-
-        newSetButton.addActionListener(e -> createNewSet());
-
+        // Первоначальное отображение всех сетов
         updateSetsList();
     }
 
+    /**
+     * Открывает диалоговое окно для создания нового сета.
+     */
     private void createNewSet() {
-        String setName = JOptionPane.showInputDialog(this, "Enter Set Name:", "Create New Set", JOptionPane.PLAIN_MESSAGE);
-        if (setName != null && !setName.trim().isEmpty()) {
-            NoteSet newSet = new NoteSet(setName.trim());
-            appState.addSet(newSet);
-            updateSetsList();
-        }
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Create New Set");
+        dialog.setHeaderText("Enter the name for the new set:");
+        dialog.setContentText("Name:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(name -> {
+            if (!name.trim().isEmpty()) {
+                NoteSet newSet = new NoteSet(name.trim());
+                appState.addSet(newSet);
+                updateSetsList(); // Обновляем UI
+            }
+        });
     }
 
+    /**
+     * Обновляет список сетов на боковой панели.
+     */
     public void updateSetsList() {
-        setsPanel.removeAll();
-        setRows.clear();
+        setsPanel.getChildren().clear(); // Очищаем старый список
         for (NoteSet set : appState.getSets()) {
-            SetRow setRow = new SetRow(set, noteSelectionListener, this::updateSetsList);
-            setRows.add(setRow);
+            // TODO: Мы создадим JavaFX-версию SetRow на следующем шаге
+            // SetRow setRow = new SetRow(set, noteSelectionListener, this::updateSetsList);
+            // setsPanel.getChildren().add(setRow);
 
-            JPanel setRowContainer = new JPanel(new BorderLayout());
-            setRowContainer.setOpaque(false);
-            setRowContainer.add(setRow, BorderLayout.NORTH);
-            setRowContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, setRow.getPreferredSize().height));
-            setsPanel.add(setRowContainer);
-            setsPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+            // Временная заглушка, пока у нас нет SetRow
+            Label placeholder = new Label("▶ " + set.getName());
+            placeholder.setStyle("-fx-font-size: 14px; -fx-padding: 8px; -fx-background-color: #e5e7eb; -fx-background-radius: 4;");
+            placeholder.setMaxWidth(Double.MAX_VALUE);
+            setsPanel.getChildren().add(placeholder);
         }
-        setsPanel.revalidate();
-        setsPanel.repaint();
     }
 }
-

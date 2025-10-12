@@ -22,6 +22,7 @@ public class Tab extends JPanel {
 
         titleLabel = new JLabel(note.getTitle());
 
+
         JButton closeButton = new JButton("x");
         closeButton.setMargin(new Insets(0, 4, 0, 4));
         closeButton.addActionListener(closeListener);

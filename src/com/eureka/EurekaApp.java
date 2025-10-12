@@ -1,51 +1,49 @@
 package com.eureka;
 
 import com.eureka.model.AppState;
-import com.eureka.ui.EditorContainer;
+import com.eureka.ui.EditorContainer; // Импортируем заглушку EditorContainer
 import com.eureka.ui.Sidebar;
-import com.eureka.ui.TopBar;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+public class EurekaApp extends Application {
 
-public class EurekaApp {
-
-    public static void main(String[] args) {
-        // Load data from the file FIRST
+    @Override
+    public void start(Stage primaryStage) {
         AppState.loadInstance(DataStorageService.loadData());
 
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        primaryStage.setTitle("Eureka");
 
-            JFrame frame = new JFrame("Eureka");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1200, 800);
-            frame.setLocationRelativeTo(null);
+        BorderPane rootLayout = new BorderPane();
 
-            // Add a listener to save data when the window is closing
-            frame.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    DataStorageService.saveData(AppState.getInstance());
-                }
-            });
+        // Создаем EditorContainer и Sidebar
+        EditorContainer editorContainer = new EditorContainer(); // Наш Swing-класс реализует нужный интерфейс
+        Sidebar sidebar = new Sidebar(editorContainer);
 
-            frame.setLayout(new BorderLayout());
-            frame.add(new TopBar(), BorderLayout.NORTH);
+        // TODO: Позже мы создадим JavaFX TopBar
+        // rootLayout.setTop(new TopBar());
 
-            EditorContainer editorContainer = new EditorContainer();
-            Sidebar sidebar = new Sidebar(editorContainer);
-            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sidebar, editorContainer);
-            splitPane.setDividerLocation(280);
-            frame.add(splitPane, BorderLayout.CENTER);
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(sidebar, editorContainer);
+        splitPane.setDividerPositions(0.30); // Боковая панель займет 30% ширины
 
-            frame.setVisible(true);
-        });
+        rootLayout.setCenter(splitPane);
+
+        Scene scene = new Scene(rootLayout, 1200, 800);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    @Override
+    public void stop() {
+        DataStorageService.saveData(AppState.getInstance());
+        System.out.println("Application is closing, data saved.");
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }

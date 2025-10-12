@@ -23,18 +23,18 @@ public class Sidebar extends BorderPane {
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
 
-        // Стилизация и настройка основной панели
+        // main panel styles
         this.setPadding(new Insets(12));
         this.setStyle("-fx-background-color: #f4f4f5; -fx-border-width: 0 1 0 0; -fx-border-color: #e5e7eb;");
         this.setPrefWidth(280);
 
-        // 1. Кнопка "New Set"
+        // 1. button to create new set
         Button newSetButton = new Button("New Set");
-        newSetButton.setMaxWidth(Double.MAX_VALUE); // Растянуть на всю ширину
+        newSetButton.setMaxWidth(Double.MAX_VALUE); // to stretch button
         newSetButton.setStyle("-fx-background-color: #e11d48; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
-        newSetButton.setOnAction(e -> createNewSet()); // Обработчик нажатия
+        newSetButton.setOnAction(e -> createNewSet()); // action on click
 
-        this.setTop(newSetButton); // Размещаем кнопку вверху
+        this.setTop(newSetButton); // placing button on top
 
         // 2. Панель для списков заметок с прокруткой
         setsPanel = new VBox(8); // VBox с отступом 8px между элементами

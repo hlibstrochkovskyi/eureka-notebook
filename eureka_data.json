@@ -1,0 +1,27 @@
+{
+  "sets": [
+    {
+      "id": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
+      "name": "Math",
+      "createdAt": 1759213185435
+    }
+  ],
+  "notes": [
+    {
+      "id": "241b7b38-1723-4b9c-933a-0033a7d78847",
+      "setId": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
+      "title": "Functions",
+      "content": "what are functions?",
+      "createdAt": 1759213190257,
+      "updatedAt": 1759213201311
+    },
+    {
+      "id": "02e5f8ee-c413-41fa-8d73-cba21bccd42f",
+      "setId": "dd99241b-d861-41ff-b8a8-c4803db3f8a3",
+      "title": "Algebra",
+      "content": "Algebra sucks",
+      "createdAt": 1759213209227,
+      "updatedAt": 1759213214261
+    }
+  ]
+}

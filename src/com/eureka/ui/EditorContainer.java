@@ -14,16 +14,16 @@ public class EditorContainer extends StackPane implements NoteSelectionListener 
 
     @Override
     public void onNoteSelected(Note note) {
-        // Логика будет добавлена позже
+        // add some sht after
     }
 
     @Override
     public void onNoteDeleted(Note deletedNote) {
-        // Логика будет добавлена позже
+        // not now
     }
 
     @Override
     public void onSetDeleted(String setId) {
-        // Логика будет добавлена позже
+        // not now
     }
 }

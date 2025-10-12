@@ -12,27 +12,35 @@ import javafx.stage.Stage;
 public class EurekaApp extends Application {
 
     @Override
+    // Replace the entire start() method in EurekaApp.java with this corrected version.
     public void start(Stage primaryStage) {
+        // 1. Load data first
         AppState.loadInstance(DataStorageService.loadData());
 
-        primaryStage.setTitle("Eureka");
-
+        // 2. Create the main layout container
         BorderPane rootLayout = new BorderPane();
 
-        // Создаем EditorContainer и Sidebar
-        EditorContainer editorContainer = new EditorContainer(); // Наш Swing-класс реализует нужный интерфейс
+        // 3. Create the UI components
+        EditorContainer editorContainer = new EditorContainer();
         Sidebar sidebar = new Sidebar(editorContainer);
 
-        // TODO: Позже мы создадим JavaFX TopBar
+        // TODO: We will create and add the TopBar later
         // rootLayout.setTop(new TopBar());
 
+        // 4. Assemble the components into the SplitPane
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(sidebar, editorContainer);
-        splitPane.setDividerPositions(0.30); // Боковая панель займет 30% ширины
+        splitPane.setDividerPositions(0.30); // Sidebar will take 30% of the width
 
+        // 5. Place the SplitPane in the center of our main layout
         rootLayout.setCenter(splitPane);
 
+        // 6. NOW, create the Scene with the fully prepared rootLayout
         Scene scene = new Scene(rootLayout, 1200, 800);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+
+        // 7. Set up the main window (Stage) and show it
+        primaryStage.setTitle("Eureka");
         primaryStage.setScene(scene);
         primaryStage.show();
     }

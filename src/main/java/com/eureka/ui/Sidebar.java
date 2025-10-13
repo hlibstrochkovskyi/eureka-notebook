@@ -1,5 +1,6 @@
 package com.eureka.ui;
 
+import com.eureka.I18n;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
@@ -40,34 +41,32 @@ public class Sidebar extends BorderPane {
         this.parentSplitPane = parentSplitPane;
 
         this.getStyleClass().add("sidebar");
-        this.setMinWidth(52); // Slightly increased for padding
+        this.setMinWidth(52);
         this.setPrefWidth(280);
 
-        // --- Toggle Button with SVG Icon ---
         toggleButton = new Button();
         toggleIcon = new SVGPath();
         toggleIcon.getStyleClass().add("sidebar-toggle-icon");
-        toggleIcon.setContent("M 10 4 L 4 10 L 10 16"); // Path for '<' chevron
+        toggleIcon.setContent("M 10 4 L 4 10 L 10 16");
         toggleButton.setGraphic(toggleIcon);
         toggleButton.getStyleClass().add("sidebar-toggle-button");
         toggleButton.setOnAction(e -> toggleCollapse(true));
 
-        // --- New Set Button ---
-        newSetButton = new Button("New Set");
+        newSetButton = new Button();
+        // Bind the button text to our I18n service
+        newSetButton.textProperty().bind(I18n.bind("button.newSet"));
         newSetButton.getStyleClass().add("new-set-button");
         newSetButton.setMaxWidth(Double.MAX_VALUE);
         newSetButton.setOnAction(e -> createNewSet());
 
-        // --- Top Bar Layout ---
         BorderPane topBar = new BorderPane();
-        topBar.setPadding(new Insets(12, 0, 0, 12)); // Adjusted padding
+        topBar.setPadding(new Insets(12, 0, 0, 12));
         topBar.setCenter(newSetButton);
         topBar.setRight(toggleButton);
         BorderPane.setMargin(toggleButton, new Insets(0, 12, 0, 8));
 
         this.setTop(topBar);
 
-        // --- Sets Panel ---
         setsPanel = new VBox(8);
         setsPanel.setPadding(new Insets(12, 12, 0, 12));
 
@@ -77,7 +76,6 @@ public class Sidebar extends BorderPane {
         scrollPane.getStyleClass().add("sidebar-scroll-pane");
 
         this.setCenter(scrollPane);
-
         updateSetsList();
     }
 
@@ -143,13 +141,12 @@ public class Sidebar extends BorderPane {
         rt.play();
     }
 
-    // --- All the missing methods are now here ---
 
     private void createNewSet() {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Create New Set");
-        dialog.setHeaderText("Enter the name for the new set:");
-        dialog.setContentText("Name:");
+        dialog.titleProperty().bind(I18n.bind("dialog.newSet.title"));
+        dialog.headerTextProperty().bind(I18n.bind("dialog.newSet.header"));
+        dialog.contentTextProperty().bind(I18n.bind("dialog.newSet.contentText"));
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {

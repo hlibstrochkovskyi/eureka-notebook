@@ -1,67 +1,121 @@
 package com.eureka.ui;
 
 import com.eureka.EurekaApp;
+import com.eureka.I18n;
 import com.eureka.NoteSelectionListener;
 import com.eureka.SearchService;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
+import com.eureka.ui.ThemeManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Side;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
-public class TopBar extends BorderPane {
+public class TopBar extends VBox {
 
     private final TextField searchField;
     private final NoteSelectionListener noteSelectionListener;
-
     private final ListView<SearchService.SearchResult> searchResultsList;
     private final ContextMenu searchResultsPopup;
 
     public TopBar(NoteSelectionListener listener) {
         this.noteSelectionListener = listener;
-        this.setPadding(new Insets(8, 12, 8, 12));
-        this.getStyleClass().add("top-bar");
+
+        // --- Menu Bar ---
+        MenuBar menuBar = createMenuBar();
+
+        // --- Search Bar Area ---
+        HBox searchArea = new HBox(12);
+        searchArea.setPadding(new Insets(4, 12, 8, 12));
+        searchArea.getStyleClass().add("search-area");
+
+        Label title = new Label();
+        title.textProperty().bind(I18n.bind("app.title"));
+        title.getStyleClass().add("app-title");
+        title.setMinWidth(180);
 
         searchField = new TextField();
-        searchField.setPromptText("Search");
+        searchField.promptTextProperty().bind(I18n.bind("search.prompt"));
         searchField.getStyleClass().add("search-field");
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
-        Label title = new Label("Eureka");
-        title.getStyleClass().add("app-title");
-        HBox titleBox = new HBox(title);
-        titleBox.setPrefWidth(200);
+        searchArea.getChildren().addAll(title, searchField);
 
-        HBox centerBox = new HBox(searchField);
-        centerBox.getStyleClass().add("top-bar-center-box");
+        this.getChildren().addAll(menuBar, searchArea);
 
-        this.setLeft(titleBox);
-        this.setCenter(centerBox);
-
-        // --- New approach using ContextMenu ---
+        // --- Search Popup Initialization ---
         searchResultsList = new ListView<>();
         searchResultsList.getStyleClass().add("search-results-list");
-        // Hide the "unfocused" border
         searchResultsList.setStyle("-fx-border-color: transparent;");
-
         CustomMenuItem menuItem = new CustomMenuItem(searchResultsList, false);
         searchResultsPopup = new ContextMenu(menuItem);
+        searchResultsPopup.getStyleClass().add("search-popup");
         searchResultsPopup.setAutoHide(true);
 
+        // This method was missing in the previous version
         setupSearchFunctionality();
     }
+
+    private MenuBar createMenuBar() {
+        MenuBar menuBar = new MenuBar();
+        Menu settingsMenu = new Menu();
+        settingsMenu.textProperty().bind(I18n.bind("menu.settings"));
+        Menu languageMenu = new Menu();
+        languageMenu.textProperty().bind(I18n.bind("menu.language"));
+
+        Map<String, Locale> languages = new LinkedHashMap<>();
+        languages.put("中文", Locale.CHINESE);
+        languages.put("English", Locale.ENGLISH);
+        languages.put("Français", Locale.FRENCH);
+        languages.put("Deutsch", Locale.GERMAN);
+        languages.put("Español", new Locale("es"));
+        languages.put("Українська", new Locale("uk"));
+
+        ToggleGroup langToggleGroup = new ToggleGroup();
+        for (Map.Entry<String, Locale> entry : languages.entrySet()) {
+            RadioMenuItem langItem = new RadioMenuItem(entry.getKey());
+            langItem.setToggleGroup(langToggleGroup);
+            langItem.setUserData(entry.getValue());
+            if (I18n.getLocale().getLanguage().equals(entry.getValue().getLanguage())) {
+                langItem.setSelected(true);
+            }
+            langItem.setOnAction(e -> I18n.setLocale((Locale) langItem.getUserData()));
+            languageMenu.getItems().add(langItem);
+        }
+
+        Menu themeMenu = new Menu();
+        themeMenu.textProperty().bind(I18n.bind("menu.theme"));
+        ToggleGroup themeToggleGroup = new ToggleGroup();
+
+        for (ThemeManager.Theme theme : ThemeManager.Theme.values()) {
+            RadioMenuItem themeItem = new RadioMenuItem(theme.name());
+            themeItem.setToggleGroup(themeToggleGroup);
+            themeItem.setUserData(theme);
+            if (ThemeManager.getCurrentTheme() == theme) {
+                themeItem.setSelected(true);
+            }
+            themeItem.setOnAction(e -> ThemeManager.setTheme((ThemeManager.Theme) themeItem.getUserData()));
+            themeMenu.getItems().add(themeItem);
+        }
+
+        settingsMenu.getItems().addAll(languageMenu, themeMenu);
+        menuBar.getMenus().add(settingsMenu);
+        return menuBar;
+    }
+
+    // --- ALL THE SEARCH METHODS THAT WERE MISSING ---
 
     private void setupSearchFunctionality() {
         searchField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -72,7 +126,6 @@ public class TopBar extends BorderPane {
             }
         });
 
-        // Hide popup if the search field loses focus
         searchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 searchResultsPopup.hide();
@@ -159,12 +212,10 @@ public class TopBar extends BorderPane {
 
     private void showSearchResults() {
         searchResultsList.setPrefWidth(searchField.getWidth());
-        // Calculate height based on number of items, with a max height
         int itemCount = searchResultsList.getItems().size();
-        double itemHeight = 50; // Approximate height of a cell
-        double newHeight = Math.min(itemCount * itemHeight, 400); // Max height 400
+        double itemHeight = 50;
+        double newHeight = Math.min(itemCount * itemHeight, 400);
         searchResultsList.setPrefHeight(newHeight);
-
         searchResultsPopup.show(searchField, Side.BOTTOM, 0, 5);
     }
 }

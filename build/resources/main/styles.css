@@ -123,10 +123,8 @@
     -fx-text-fill: -color-text;
 }
 
-/* Add these styles to the END of your styles.css file */
 
-/* This makes the popup container itself transparent */
-.context-menu {
+.search-popup {
     -fx-background-color: transparent;
     -fx-padding: 0;
     -fx-background-insets: 0;

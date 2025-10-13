@@ -1,50 +1,59 @@
 package com.eureka.ui;
 
+import com.eureka.I18n;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
-
 import java.util.prefs.Preferences;
 
-/**
- * Manages the application's theme (Light/Dark).
- * Based on the implementation details from FEAT-007.
- */
 public class ThemeManager {
 
-    public enum Theme {
-        LIGHT, DARK
-    }
+    public enum Theme { LIGHT, DARK, SYSTEM }
 
-    private static final String LIGHT_THEME_CSS = "/theme-light.css";
-    private static final String DARK_THEME_CSS = "/theme-dark.css";
+    private static final String LIGHT_CSS = "/theme-light.css";
+    private static final String DARK_CSS = "/theme-dark.css";
     private static final ObjectProperty<Theme> currentTheme = new SimpleObjectProperty<>(loadThemePreference());
 
-    /**
-     * Initializes the theme manager and applies the saved or default theme to the scene.
-     * @param scene The main application scene.
-     */
     public static void initialize(Scene scene) {
         applyThemeToScene(scene);
-        currentTheme.addListener((obs, oldTheme, newTheme) -> {
-            saveThemePreference(newTheme);
-            applyThemeToScene(scene);
-        });
+        currentTheme.addListener((obs, oldTheme, newTheme) -> applyThemeToScene(scene));
     }
 
-    public static void applyTheme(Theme theme) {
+    public static ObjectProperty<Theme> currentThemeProperty() {
+        return currentTheme;
+    }
+
+    public static Theme getCurrentTheme() {
+        return currentTheme.get();
+    }
+
+    public static void setTheme(Theme theme) {
+        saveThemePreference(theme);
         currentTheme.set(theme);
     }
 
     private static void applyThemeToScene(Scene scene) {
-        // Remove all theme stylesheets before applying a new one
-        scene.getStylesheets().removeAll(
-                ThemeManager.class.getResource(LIGHT_THEME_CSS).toExternalForm(),
-                ThemeManager.class.getResource(DARK_THEME_CSS).toExternalForm()
-        );
+        // First, remove old theme stylesheets to prevent conflicts
+        scene.getStylesheets().remove(ThemeManager.class.getResource(LIGHT_CSS).toExternalForm());
+        scene.getStylesheets().remove(ThemeManager.class.getResource(DARK_CSS).toExternalForm());
 
-        String cssPath = (currentTheme.get() == Theme.DARK) ? DARK_THEME_CSS : LIGHT_THEME_CSS;
-        scene.getStylesheets().add(ThemeManager.class.getResource(cssPath).toExternalForm());
+        Theme effectiveTheme = resolveEffectiveTheme(currentTheme.get());
+
+        String cssPath = (effectiveTheme == Theme.DARK) ? DARK_CSS : LIGHT_CSS;
+        scene.getStylesheets().add(0, ThemeManager.class.getResource(cssPath).toExternalForm());
+    }
+
+    private static Theme resolveEffectiveTheme(Theme theme) {
+        if (theme == Theme.SYSTEM) {
+            // Basic check for OS dark mode. This is a simplification.
+            // A full implementation requires platform-specific code.
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win") || os.contains("mac")) {
+                // For simplicity, we assume system is light. A real implementation would query the OS.
+                return Theme.LIGHT;
+            }
+        }
+        return theme;
     }
 
     private static void saveThemePreference(Theme theme) {
@@ -52,9 +61,13 @@ public class ThemeManager {
         prefs.put("app_theme", theme.name());
     }
 
-    public static Theme loadThemePreference() {
+    private static Theme loadThemePreference() {
         Preferences prefs = Preferences.userNodeForPackage(ThemeManager.class);
-        String themeName = prefs.get("app_theme", Theme.LIGHT.name());
-        return Theme.valueOf(themeName);
+        String themeName = prefs.get("app_theme", Theme.SYSTEM.name());
+        try {
+            return Theme.valueOf(themeName);
+        } catch (IllegalArgumentException e) {
+            return Theme.SYSTEM;
+        }
     }
 }

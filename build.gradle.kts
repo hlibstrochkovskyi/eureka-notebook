@@ -49,3 +49,7 @@ application {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
+// This tells Gradle to process resource files (like .properties) as UTF-8
+tasks.withType<ProcessResources> {
+    filteringCharset = "UTF-8"
+}

@@ -76,7 +76,6 @@ public class EditorContainer extends BorderPane implements NoteSelectionListener
         tab.setId(note.getId());
         TextArea editorArea = new TextArea(note.getContent());
         editorArea.setWrapText(true);
-        editorArea.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 14;");
         editorArea.textProperty().addListener((obs, oldText, newText) -> {
             if (!Objects.equals(note.getContent(), newText)) {
                 note.setContent(newText);

@@ -4,19 +4,19 @@ import com.eureka.EurekaApp;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
-import javafx.geometry.Insets;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.shape.SVGPath;
+
 import java.util.Optional;
-import javafx.geometry.Side;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
 
 public class NoteRow extends BorderPane {
+
     private final Note note;
     private final NoteSelectionListener noteSelectionListener;
     private final AppState appState;
-    private final Runnable onNoteChangedCallback; // Renamed for clarity
+    private final Runnable onNoteChangedCallback;
 
     public NoteRow(Note note, NoteSelectionListener listener, Runnable onNoteChangedCallback) {
         this.note = note;
@@ -24,33 +24,48 @@ public class NoteRow extends BorderPane {
         this.appState = AppState.getInstance();
         this.onNoteChangedCallback = onNoteChangedCallback;
 
-        // --- UI Elements ---
+        getStyleClass().add("note-row");
+
         Label titleLabel = new Label(note.getTitle());
-        titleLabel.setStyle("-fx-font-size: 13px;");
 
-        // --- Actions Menu Button ---
-        Button actionsButton = new Button("⋮"); // "More actions" button
+        // --- Icon Button for Actions ---
+        Button menuButton = createIconButton("M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z");
 
-        // --- Context Menu for Actions ---
+        // --- Context Menu ---
         ContextMenu contextMenu = new ContextMenu();
-
         MenuItem renameItem = new MenuItem("Rename");
         renameItem.setOnAction(e -> renameNote());
-
         MenuItem deleteItem = new MenuItem("Delete");
         deleteItem.setOnAction(e -> deleteNote());
-
         contextMenu.getItems().addAll(renameItem, deleteItem);
 
-        // Show context menu when actionsButton is clicked
-        actionsButton.setOnAction(e -> contextMenu.show(actionsButton, Side.BOTTOM, 0, 0));
+        menuButton.setOnAction(e -> contextMenu.show(menuButton, Side.BOTTOM, 0, 5));
 
-        // --- Layout ---
-        this.setPadding(new Insets(6, 8, 6, 8));
         this.setLeft(titleLabel);
-        this.setRight(actionsButton); // Use actionsButton instead of a simple delete button
-        this.getStyleClass().add("note-row");
-        this.setOnMouseClicked(event -> noteSelectionListener.onNoteSelected(note));
+        this.setRight(menuButton);
+
+        this.setOnMouseClicked(event -> {
+            // Trigger selection only if not clicking on the button area
+            if (!(event.getTarget() instanceof Button || event.getTarget() instanceof SVGPath)) {
+                noteSelectionListener.onNoteSelected(note);
+            }
+        });
+    }
+
+    /**
+     * Helper method to create a styled button with an SVG icon.
+     * @param svgContent The SVG path data for the icon.
+     * @return A configured Button.
+     */
+    private Button createIconButton(String svgContent) {
+        SVGPath path = new SVGPath();
+        path.setContent(svgContent);
+        path.getStyleClass().add("svg-path");
+
+        Button button = new Button();
+        button.setGraphic(path);
+        button.getStyleClass().add("icon-button");
+        return button;
     }
 
     private void renameNote() {
@@ -63,10 +78,8 @@ public class NoteRow extends BorderPane {
         result.ifPresent(newName -> {
             if (!newName.trim().isEmpty() && !newName.trim().equals(note.getTitle())) {
                 note.setTitle(newName.trim());
-                // We need to tell the UI to refresh
-                onNoteChangedCallback.run();
-                // We also need to update the tab if it's open
-                noteSelectionListener.onNoteRenamed(note);
+                onNoteChangedCallback.run(); // This refreshes the note list in the sidebar
+                noteSelectionListener.onNoteRenamed(note); // This updates the tab if open
             }
         });
     }

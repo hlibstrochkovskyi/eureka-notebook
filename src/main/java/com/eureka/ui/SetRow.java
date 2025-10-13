@@ -5,20 +5,21 @@ import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
 import com.eureka.model.NoteSet;
+import javafx.animation.RotateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextInputDialog;
+import javafx.geometry.Side;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
+import javafx.util.Duration;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class SetRow extends VBox {
 
@@ -27,58 +28,87 @@ public class SetRow extends VBox {
     private final NoteSelectionListener noteSelectionListener;
     private final AppState appState;
     private boolean isExpanded = false;
-    private final Runnable onSetDeletedCallback;
-
-    // We make the label a field of the class to easily access it from any method
+    private final Runnable onSetChangedCallback;
     private final Label setNameLabel;
+    private final SVGPath arrowIcon;
 
-    public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetDeletedCallback) {
+    public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetChangedCallback) {
         this.noteSet = noteSet;
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
-        this.onSetDeletedCallback = onSetDeletedCallback;
+        this.onSetChangedCallback = onSetChangedCallback;
 
-        HBox headerPanel = new HBox();
+        getStyleClass().add("set-row");
+
+        // --- Header Panel ---
+        HBox headerPanel = new HBox(4);
         headerPanel.setAlignment(Pos.CENTER_LEFT);
-        headerPanel.setPadding(new Insets(4, 8, 4, 12));
-        headerPanel.setStyle("-fx-background-color: #e5e7eb; -fx-background-radius: 5; -fx-cursor: hand;");
+        headerPanel.getStyleClass().add("header");
 
-        // Initialize the field instead of a local variable
-        this.setNameLabel = new Label("▶ " + noteSet.getName());
-        this.setNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-        this.setNameLabel.setMaxWidth(Double.MAX_VALUE);
+        arrowIcon = new SVGPath();
+        arrowIcon.setContent("M8 5l6 6-6 6z"); // Right-pointing arrow
+
+        // Use a Region to hold the SVG shape for better styling control
+        Region arrowContainer = new Region();
+        arrowContainer.setShape(arrowIcon);
+        arrowContainer.getStyleClass().add("arrow-icon");
+
+        this.setNameLabel = new Label(noteSet.getName());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button addButton = new Button("+");
-        addButton.setStyle("-fx-cursor: default;");
-        Button deleteButton = new Button("×");
-        deleteButton.setStyle("-fx-cursor: default;");
-        HBox buttonsPanel = new HBox(4, addButton, deleteButton);
+        // --- Icon Buttons ---
+        Button addButton = createIconButton("M12 5v14m-7-7h14"); // Plus Icon
+        addButton.setOnAction(e -> addNewNote());
 
-        headerPanel.getChildren().addAll(setNameLabel, spacer, buttonsPanel);
+        Button menuButton = createIconButton("M12 8a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"); // Vertical dots icon
 
-        notesPanel = new VBox(4);
-        notesPanel.setPadding(new Insets(8, 0, 0, 15));
+        // --- Context Menu for Actions ---
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem renameItem = new MenuItem("Rename Set");
+        renameItem.setOnAction(e -> renameSet());
+        MenuItem deleteItem = new MenuItem("Delete Set");
+        deleteItem.getStyleClass().add("destructive-menu-item");
+        deleteItem.setOnAction(e -> deleteSet());
+        contextMenu.getItems().addAll(renameItem, new SeparatorMenuItem(), deleteItem);
+
+        menuButton.setOnAction(e -> contextMenu.show(menuButton, Side.BOTTOM, 0, 5));
+
+        headerPanel.getChildren().addAll(arrowContainer, setNameLabel, spacer, addButton, menuButton);
+
+        // --- Notes Panel ---
+        notesPanel = new VBox(0); // Spacing is handled by CSS
+        notesPanel.getStyleClass().add("notes-panel");
         notesPanel.setVisible(false);
         notesPanel.setManaged(false);
 
         this.getChildren().addAll(headerPanel, notesPanel);
 
+        // --- Event Handlers ---
         headerPanel.setOnMouseClicked(event -> {
-            if (!(event.getTarget() instanceof Button)) {
+            if (!(event.getTarget() instanceof Button || event.getTarget() instanceof SVGPath)) {
                 toggleExpand();
             }
         });
-        addButton.setOnAction(event -> addNewNote());
-        deleteButton.setOnAction(event -> deleteSet());
+    }
+
+    private Button createIconButton(String svgContent) {
+        SVGPath path = new SVGPath();
+        path.setContent(svgContent);
+        path.getStyleClass().add("svg-path");
+        Button button = new Button();
+        button.setGraphic(path);
+        button.getStyleClass().add("icon-button");
+        return button;
     }
 
     private void toggleExpand() {
         isExpanded = !isExpanded;
-        // Now we can directly access the field
-        setNameLabel.setText((isExpanded ? "▼ " : "▶ ") + noteSet.getName());
+        RotateTransition rt = new RotateTransition(Duration.millis(200), arrowIcon);
+        rt.setToAngle(isExpanded ? 90 : 0);
+        rt.play();
+
         notesPanel.setVisible(isExpanded);
         notesPanel.setManaged(isExpanded);
         if (isExpanded) {
@@ -87,16 +117,13 @@ public class SetRow extends VBox {
     }
 
     private void addNewNote() {
-        // THE FIX: No more casting! We just use the field directly.
         if (!isExpanded) {
             toggleExpand();
         }
-
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Create New Note");
         dialog.setHeaderText("Enter title for note in \"" + noteSet.getName() + "\":");
         dialog.setContentText("Title:");
-
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(title -> {
             if (!title.trim().isEmpty()) {
@@ -114,30 +141,37 @@ public class SetRow extends VBox {
         alert.setTitle("Delete Set");
         alert.setHeaderText("Delete the set \"" + noteSet.getName() + "\"?");
         alert.setContentText("This will permanently delete the set and all notes within it.");
-
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             List<Note> notesToDelete = List.copyOf(appState.getNotesForSet(noteSet.getId()));
-
-            // Delete from search index BEFORE deleting from AppState
             notesToDelete.forEach(note -> EurekaApp.getSearchService().deleteNote(note));
-
             appState.deleteSet(noteSet.getId());
             noteSelectionListener.onSetDeleted(noteSet.getId(), notesToDelete);
-            onSetDeletedCallback.run();
+            onSetChangedCallback.run();
         }
+    }
 
-
-
+    private void renameSet() {
+        TextInputDialog dialog = new TextInputDialog(noteSet.getName());
+        dialog.setTitle("Rename Set");
+        dialog.setHeaderText("Enter new name for the set:");
+        dialog.setContentText("Name:");
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newName -> {
+            if (!newName.trim().isEmpty() && !newName.trim().equals(noteSet.getName())) {
+                noteSet.setName(newName.trim());
+                this.setNameLabel.setText(noteSet.getName());
+                onSetChangedCallback.run();
+            }
+        });
     }
 
     private void refreshNotesList() {
         notesPanel.getChildren().clear();
         List<Note> notesInSet = appState.getNotesForSet(noteSet.getId());
-
         if (notesInSet.isEmpty()) {
-            Label emptyLabel = new Label("This set is empty.");
-            emptyLabel.setStyle("-fx-text-fill: grey; -fx-padding: 5;");
+            Label emptyLabel = new Label("No notes in this set");
+            emptyLabel.getStyleClass().add("empty-set-label");
             notesPanel.getChildren().add(emptyLabel);
         } else {
             for (Note note : notesInSet) {
@@ -147,6 +181,7 @@ public class SetRow extends VBox {
         }
     }
 
+    // --- METHODS THAT WERE MISSING ---
     public NoteSet getNoteSet() {
         return noteSet;
     }
@@ -157,14 +192,10 @@ public class SetRow extends VBox {
         }
     }
 
-
-
-
-
     public List<NoteRow> getNoteRows() {
         return notesPanel.getChildren().stream()
                 .filter(node -> node instanceof NoteRow)
                 .map(node -> (NoteRow) node)
-                .toList();
+                .collect(Collectors.toList());
     }
 }

@@ -1,34 +1,40 @@
+// src/main/java/com/eureka/ui/ThemeManager.java
 package com.eureka.ui;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
+import java.net.URL; // Make sure this import is present
 import java.util.prefs.Preferences;
 
 public class ThemeManager {
     public enum Theme { LIGHT, DARK }
 
-    // File paths for the stylesheets
     private static final String LIGHT_CSS = "/light.css";
     private static final String DARK_CSS = "/dark.css";
-
     private static final ObjectProperty<Theme> currentTheme = new SimpleObjectProperty<>(loadThemePreference());
 
     public static void initialize(Scene scene) {
-        // Add a listener to change the stylesheet when the theme property changes
         currentTheme.addListener((obs, oldTheme, newTheme) -> applyTheme(scene, newTheme));
-        // Apply the initial theme when the app starts
         applyTheme(scene, currentTheme.get());
     }
 
     private static void applyTheme(Scene scene, Theme theme) {
-        // Remove all previous theme stylesheets to prevent conflicts
-        scene.getStylesheets().remove(LIGHT_CSS);
-        scene.getStylesheets().remove(DARK_CSS);
+        // First, clear all existing stylesheets to prevent conflicts
+        scene.getStylesheets().clear();
 
-        // Add the correct stylesheet based on the selected theme
         String cssPath = (theme == Theme.DARK) ? DARK_CSS : LIGHT_CSS;
-        scene.getStylesheets().add(cssPath);
+
+        // THE FIX: Use the class's resource loader to get a full, valid URL to the CSS file.
+        // This is the most reliable way to load resources.
+        URL cssUrl = ThemeManager.class.getResource(cssPath);
+
+        if (cssUrl != null) {
+            scene.getStylesheets().add(cssUrl.toExternalForm());
+            System.out.println("Successfully loaded stylesheet: " + cssPath);
+        } else {
+            System.err.println("CRITICAL ERROR: Cannot find CSS file in resources: " + cssPath);
+        }
     }
 
     public static ObjectProperty<Theme> currentThemeProperty() { return currentTheme; }
@@ -50,7 +56,7 @@ public class ThemeManager {
         try {
             return Theme.valueOf(themeName);
         } catch (IllegalArgumentException e) {
-            return Theme.LIGHT; // Fallback to light theme
+            return Theme.LIGHT;
         }
     }
 }

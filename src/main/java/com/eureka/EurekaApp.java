@@ -56,6 +56,7 @@ public class EurekaApp extends Application {
             sidebar.collapse(false);
         }
     }
+    //code
     @Override
     public void stop() {
         DataStorageService.saveData(AppState.getInstance());

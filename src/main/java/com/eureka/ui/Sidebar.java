@@ -6,6 +6,7 @@ import com.eureka.model.Note;
 import com.eureka.model.NoteSet;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.RotateTransition;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -13,11 +14,11 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 import java.util.Optional;
+import java.util.List;
 
 public class Sidebar extends BorderPane {
 
@@ -28,22 +29,26 @@ public class Sidebar extends BorderPane {
     private final Button newSetButton;
     private final ScrollPane scrollPane;
     private final Button toggleButton;
+    private final SVGPath toggleIcon;
 
     private boolean isCollapsed = false;
-    private double lastDividerPosition = 0.3; // Default open position
-
+    private double lastDividerPosition = 0.3;
 
     public Sidebar(NoteSelectionListener listener, SplitPane parentSplitPane) {
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
         this.parentSplitPane = parentSplitPane;
 
-        // --- Main panel styles ---
         this.getStyleClass().add("sidebar");
-        this.setMinWidth(48); // The minimum width when collapsed
+        this.setMinWidth(52); // Slightly increased for padding
+        this.setPrefWidth(280);
 
-        // --- Toggle Button ---
+        // --- Toggle Button with SVG Icon ---
         toggleButton = new Button();
+        toggleIcon = new SVGPath();
+        toggleIcon.getStyleClass().add("sidebar-toggle-icon");
+        toggleIcon.setContent("M 10 4 L 4 10 L 10 16"); // Path for '<' chevron
+        toggleButton.setGraphic(toggleIcon);
         toggleButton.getStyleClass().add("sidebar-toggle-button");
         toggleButton.setOnAction(e -> toggleCollapse(true));
 
@@ -53,15 +58,13 @@ public class Sidebar extends BorderPane {
         newSetButton.setMaxWidth(Double.MAX_VALUE);
         newSetButton.setOnAction(e -> createNewSet());
 
-        // --- Top Bar Container (HBox) ---
-        HBox topBar = new HBox();
-        topBar.setSpacing(8); // Add some space between the buttons
-        topBar.setPadding(new Insets(12, 12, 0, 12));
+        // --- Top Bar Layout ---
+        BorderPane topBar = new BorderPane();
+        topBar.setPadding(new Insets(12, 0, 0, 12)); // Adjusted padding
+        topBar.setCenter(newSetButton);
+        topBar.setRight(toggleButton);
+        BorderPane.setMargin(toggleButton, new Insets(0, 12, 0, 8));
 
-        // FIX 1: Allow newSetButton to grow and fill space
-        HBox.setHgrow(newSetButton, Priority.ALWAYS);
-
-        topBar.getChildren().addAll(newSetButton, toggleButton);
         this.setTop(topBar);
 
         // --- Sets Panel ---
@@ -75,18 +78,16 @@ public class Sidebar extends BorderPane {
 
         this.setCenter(scrollPane);
 
-        // FIX 2: Set the initial icon for the toggle button
-        updateToggleButton();
-
         updateSetsList();
     }
 
     private void toggleCollapse(boolean animate) {
         isCollapsed = !isCollapsed;
-        appState.setSidebarCollapsed(isCollapsed); // Save state
+        appState.setSidebarCollapsed(isCollapsed);
+
+        animateToggleButton();
 
         if (isCollapsed) {
-            // Before collapsing, save the current divider position if it's open
             if (parentSplitPane.getDividers().get(0).getPosition() > 0.01) {
                 lastDividerPosition = parentSplitPane.getDividers().get(0).getPosition();
             }
@@ -98,8 +99,11 @@ public class Sidebar extends BorderPane {
 
     public void collapse(boolean animate) {
         isCollapsed = true;
-        updateToggleButton();
+        animateToggleButton();
+        // Use setManaged to completely remove nodes from layout calculations
+        newSetButton.setManaged(false);
         newSetButton.setVisible(false);
+        scrollPane.setManaged(false);
         scrollPane.setVisible(false);
 
         if (animate) {
@@ -111,8 +115,11 @@ public class Sidebar extends BorderPane {
 
     public void expand(boolean animate) {
         isCollapsed = false;
-        updateToggleButton();
+        animateToggleButton();
+        // Bring nodes back into the layout
+        newSetButton.setManaged(true);
         newSetButton.setVisible(true);
+        scrollPane.setManaged(true);
         scrollPane.setVisible(true);
 
         if (animate) {
@@ -130,14 +137,13 @@ public class Sidebar extends BorderPane {
         timeline.play();
     }
 
-    private void updateToggleButton() {
-        // This simple graphic will be styled by CSS to look like < or >
-        if (isCollapsed) {
-            toggleButton.setText(">");
-        } else {
-            toggleButton.setText("<");
-        }
+    private void animateToggleButton() {
+        RotateTransition rt = new RotateTransition(Duration.millis(200), toggleIcon);
+        rt.setToAngle(isCollapsed ? 180 : 0); // 0 degrees for '<', 180 for '>'
+        rt.play();
     }
+
+    // --- All the missing methods are now here ---
 
     private void createNewSet() {
         TextInputDialog dialog = new TextInputDialog();

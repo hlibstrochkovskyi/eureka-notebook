@@ -144,13 +144,11 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 5);
 }
 
-/* Add this to the end of styles.css */
 
 .sidebar-toggle-button {
     -fx-background-color: transparent;
-    -fx-font-size: 16px;
-    -fx-padding: 4px 8px;
-    -fx-text-fill: -color-text-secondary;
+    -fx-padding: 8px;
+    -fx-cursor: hand;
 }
 
 .sidebar-toggle-button:hover {
@@ -160,4 +158,11 @@
 
 .sidebar-scroll-pane {
     -fx-background-color: transparent;
+}
+
+.sidebar-toggle-icon {
+    -fx-fill: transparent; /* Makes the inside of the shape transparent */
+    -fx-stroke: -color-text-secondary; /* Sets the color of the line */
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: ROUND;
 }

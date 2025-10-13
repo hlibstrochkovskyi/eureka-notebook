@@ -4,13 +4,19 @@ import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
 import com.eureka.model.NoteSet;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-
+import javafx.util.Duration;
 import java.util.Optional;
 
 public class Sidebar extends BorderPane {
@@ -18,43 +24,121 @@ public class Sidebar extends BorderPane {
     private final VBox setsPanel;
     private final AppState appState;
     private final NoteSelectionListener noteSelectionListener;
+    private final SplitPane parentSplitPane;
+    private final Button newSetButton;
+    private final ScrollPane scrollPane;
+    private final Button toggleButton;
 
-    public Sidebar(NoteSelectionListener listener) {
+    private boolean isCollapsed = false;
+    private double lastDividerPosition = 0.3; // Default open position
+
+
+    public Sidebar(NoteSelectionListener listener, SplitPane parentSplitPane) {
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
+        this.parentSplitPane = parentSplitPane;
 
-        // main panel styles
-        this.setPadding(new Insets(12));
-        this.setStyle("-fx-background-color: #f4f4f5; -fx-border-width: 0 1 0 0; -fx-border-color: #e5e7eb;");
-        this.setPrefWidth(280);
+        // --- Main panel styles ---
+        this.getStyleClass().add("sidebar");
+        this.setMinWidth(48); // The minimum width when collapsed
 
-        // 1. button to create new set
-        Button newSetButton = new Button("New Set");
-        newSetButton.setMaxWidth(Double.MAX_VALUE); // to stretch button
-        newSetButton.setStyle("-fx-background-color: #e11d48; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
-        newSetButton.setOnAction(e -> createNewSet()); // action on click
+        // --- Toggle Button ---
+        toggleButton = new Button();
+        toggleButton.getStyleClass().add("sidebar-toggle-button");
+        toggleButton.setOnAction(e -> toggleCollapse(true));
 
-        this.setTop(newSetButton); // placing button on top
+        // --- New Set Button ---
+        newSetButton = new Button("New Set");
+        newSetButton.getStyleClass().add("new-set-button");
+        newSetButton.setMaxWidth(Double.MAX_VALUE);
+        newSetButton.setOnAction(e -> createNewSet());
 
-        // 2. Panel for the list of sets with scrolling
-        setsPanel = new VBox(8); // VBox with 8px spacing
-        setsPanel.setPadding(new Insets(12, 0, 0, 0));
+        // --- Top Bar Container (HBox) ---
+        HBox topBar = new HBox();
+        topBar.setSpacing(8); // Add some space between the buttons
+        topBar.setPadding(new Insets(12, 12, 0, 12));
 
-        ScrollPane scrollPane = new ScrollPane(setsPanel);
+        // FIX 1: Allow newSetButton to grow and fill space
+        HBox.setHgrow(newSetButton, Priority.ALWAYS);
+
+        topBar.getChildren().addAll(newSetButton, toggleButton);
+        this.setTop(topBar);
+
+        // --- Sets Panel ---
+        setsPanel = new VBox(8);
+        setsPanel.setPadding(new Insets(12, 12, 0, 12));
+
+        scrollPane = new ScrollPane(setsPanel);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent;");
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.getStyleClass().add("sidebar-scroll-pane");
 
         this.setCenter(scrollPane);
 
-        // Initial display of all sets
+        // FIX 2: Set the initial icon for the toggle button
+        updateToggleButton();
+
         updateSetsList();
     }
 
+    private void toggleCollapse(boolean animate) {
+        isCollapsed = !isCollapsed;
+        appState.setSidebarCollapsed(isCollapsed); // Save state
 
-    /**
-     * Opens a dialog window to create a new set.
-     */
+        if (isCollapsed) {
+            // Before collapsing, save the current divider position if it's open
+            if (parentSplitPane.getDividers().get(0).getPosition() > 0.01) {
+                lastDividerPosition = parentSplitPane.getDividers().get(0).getPosition();
+            }
+            collapse(animate);
+        } else {
+            expand(animate);
+        }
+    }
+
+    public void collapse(boolean animate) {
+        isCollapsed = true;
+        updateToggleButton();
+        newSetButton.setVisible(false);
+        scrollPane.setVisible(false);
+
+        if (animate) {
+            animateDividerTo(0.0);
+        } else {
+            parentSplitPane.setDividerPosition(0, 0.0);
+        }
+    }
+
+    public void expand(boolean animate) {
+        isCollapsed = false;
+        updateToggleButton();
+        newSetButton.setVisible(true);
+        scrollPane.setVisible(true);
+
+        if (animate) {
+            animateDividerTo(lastDividerPosition);
+        } else {
+            parentSplitPane.setDividerPosition(0, lastDividerPosition);
+        }
+    }
+
+    private void animateDividerTo(double targetPosition) {
+        Timeline timeline = new Timeline();
+        KeyValue kv = new KeyValue(parentSplitPane.getDividers().get(0).positionProperty(), targetPosition);
+        KeyFrame kf = new KeyFrame(Duration.millis(200), kv);
+        timeline.getKeyFrames().add(kf);
+        timeline.play();
+    }
+
+    private void updateToggleButton() {
+        // This simple graphic will be styled by CSS to look like < or >
+        if (isCollapsed) {
+            toggleButton.setText(">");
+        } else {
+            toggleButton.setText("<");
+        }
+    }
+
     private void createNewSet() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Create New Set");
@@ -66,47 +150,35 @@ public class Sidebar extends BorderPane {
             if (!name.trim().isEmpty()) {
                 NoteSet newSet = new NoteSet(name.trim());
                 appState.addSet(newSet);
-                updateSetsList(); // Update the UI
+                updateSetsList();
             }
         });
     }
 
-    /**
-     * Clears and re-populates the list of sets in the sidebar UI.
-     * This is the single, correct version of the method.
-     */
     public void updateSetsList() {
-        setsPanel.getChildren().clear(); // Clear the old list
+        setsPanel.getChildren().clear();
         for (NoteSet set : appState.getSets()) {
-            // Now, we create and add the REAL, interactive SetRow component!
             SetRow setRow = new SetRow(set, noteSelectionListener, this::updateSetsList);
             setsPanel.getChildren().add(setRow);
         }
     }
 
-    // Add this method inside Sidebar.java
-
-    /**
-     * Finds the corresponding SetRow for a note and expands it.
-     * This is crucial for the search functionality.
-     */
     public void expandSetForNote(Note note) {
+        if (isCollapsed) {
+            expand(true);
+        }
         if (note == null) return;
         String setId = note.getSetId();
         for (var child : setsPanel.getChildren()) {
             if (child instanceof SetRow setRow) {
                 if (setRow.getNoteSet().getId().equals(setId)) {
                     setRow.expand();
-                    break; // Found and expanded, no need to continue
+                    break;
                 }
             }
         }
     }
 
-
-    /**
-     * Updates the highlighting of note rows based on the currently active note.
-     */
     public void updateNoteHighlighting(Note activeNote) {
         for (var child : setsPanel.getChildren()) {
             if (child instanceof SetRow setRow) {

@@ -11,6 +11,7 @@ public class AppState {
     private List<NoteSet> sets;
     private List<Note> notes;
 
+
     private AppState() {
         sets = new ArrayList<>();
         notes = new ArrayList<>();
@@ -22,6 +23,17 @@ public class AppState {
         }
         return instance;
     }
+
+    private boolean sidebarCollapsed = false;
+
+    public boolean isSidebarCollapsed() {
+        return sidebarCollapsed;
+    }
+
+    public void setSidebarCollapsed(boolean sidebarCollapsed) {
+        this.sidebarCollapsed = sidebarCollapsed;
+    }
+
 
     // Method to create a new, empty state, used when no save file exists
     public static AppState createEmptyState() {

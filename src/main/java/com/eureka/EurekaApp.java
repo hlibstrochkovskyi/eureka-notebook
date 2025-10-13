@@ -18,6 +18,9 @@ public class EurekaApp extends Application {
 
     private static SearchService searchService;
 
+
+
+
     @Override
     public void start(Stage primaryStage) {
         AppState.loadInstance(DataStorageService.loadData());
@@ -26,45 +29,47 @@ public class EurekaApp extends Application {
             searchService = new SearchService(Paths.get(System.getProperty("user.home"), ".eureka"));
         } catch (IOException e) {
             e.printStackTrace();
-            // Handle error gracefully
             return;
         }
 
-        // --- Use BorderPane as the root layout ---
         BorderPane rootLayout = new BorderPane();
 
-        // Components
+        // --- THIS IS THE MAIN CHANGE ---
+        // 1. Create SplitPane first
+        SplitPane splitPane = new SplitPane();
+
+        // 2. Create components and pass SplitPane to Sidebar
         EditorContainer editorContainer = new EditorContainer();
-        Sidebar sidebar = new Sidebar(editorContainer);
+        Sidebar sidebar = new Sidebar(editorContainer, splitPane);
         editorContainer.setSidebar(sidebar);
 
-        // The new TopBar no longer needs a reference to the root pane
-        TopBar topBar = new TopBar(editorContainer);
-
-        rootLayout.setTop(topBar);
-        SplitPane splitPane = new SplitPane(sidebar, editorContainer);
+        // 3. Add components to the SplitPane
+        splitPane.getItems().addAll(sidebar, editorContainer);
         splitPane.setDividerPositions(0.30);
+        // --- END OF CHANGE ---
+
+        TopBar topBar = new TopBar(editorContainer);
+        rootLayout.setTop(topBar);
         rootLayout.setCenter(splitPane);
 
-        // --- Scene and Stage ---
         Scene scene = new Scene(rootLayout, 1200, 800);
 
-        // Safely get and add the stylesheet
+        // Load stylesheets
+        ThemeManager.initialize(scene);
         String cssPath = getClass().getResource("/styles.css").toExternalForm();
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
-        } else {
-            System.err.println("Warning: styles.css not found.");
         }
-
-        // ThemeManager call is ready for when you want to implement it
-        // ThemeManager.initialize(scene);
 
         primaryStage.setTitle("Eureka");
         primaryStage.setScene(scene);
         primaryStage.show();
-    }
 
+        // Apply the saved collapsed state after the stage is shown
+        if (AppState.getInstance().isSidebarCollapsed()) {
+            sidebar.collapse(false); // false = no animation on startup
+        }
+    }
     @Override
     public void stop() {
         DataStorageService.saveData(AppState.getInstance());

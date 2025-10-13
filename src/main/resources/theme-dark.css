@@ -1,0 +1,12 @@
+/* theme-dark.css */
+.root {
+    -color-bg: #121212;
+    -color-surface: #1c1c1e;
+    -color-text: #e5e7eb;
+    -color-text-secondary: #9ca3af;
+    -color-border: #374151;
+    -color-accent: #e11d48;
+    -color-hover: #2a2a2a;
+    -color-active: #3b82f6;
+    -color-active-bg: #2a3a5b;
+}

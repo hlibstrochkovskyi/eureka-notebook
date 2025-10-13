@@ -2,30 +2,33 @@ package com.eureka.ui;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import java.util.prefs.Preferences;
 
 public class ThemeManager {
     public enum Theme { LIGHT, DARK }
 
+    // File paths for the stylesheets
     private static final String LIGHT_CSS = "/light.css";
     private static final String DARK_CSS = "/dark.css";
+
     private static final ObjectProperty<Theme> currentTheme = new SimpleObjectProperty<>(loadThemePreference());
 
     public static void initialize(Scene scene) {
-        Parent root = scene.getRoot();
-        currentTheme.addListener((obs, oldTheme, newTheme) -> updateStyleClass(root, newTheme));
-        updateStyleClass(root, currentTheme.get()); // Apply initial theme
+        // Add a listener to change the stylesheet when the theme property changes
+        currentTheme.addListener((obs, oldTheme, newTheme) -> applyTheme(scene, newTheme));
+        // Apply the initial theme when the app starts
+        applyTheme(scene, currentTheme.get());
     }
 
-    private static void updateStyleClass(Parent node, Theme theme) {
-        // Remove both classes to be safe before adding the correct one
-        node.getStyleClass().remove("dark");
+    private static void applyTheme(Scene scene, Theme theme) {
+        // Remove all previous theme stylesheets to prevent conflicts
+        scene.getStylesheets().remove(LIGHT_CSS);
+        scene.getStylesheets().remove(DARK_CSS);
 
-        if (theme == Theme.DARK) {
-            node.getStyleClass().add("dark");
-        }
+        // Add the correct stylesheet based on the selected theme
+        String cssPath = (theme == Theme.DARK) ? DARK_CSS : LIGHT_CSS;
+        scene.getStylesheets().add(cssPath);
     }
 
     public static ObjectProperty<Theme> currentThemeProperty() { return currentTheme; }
@@ -36,8 +39,6 @@ public class ThemeManager {
         currentTheme.set(theme);
     }
 
-    // --- Here is the full implementation of the missing methods ---
-
     private static void saveThemePreference(Theme theme) {
         Preferences prefs = Preferences.userNodeForPackage(ThemeManager.class);
         prefs.put("app_theme", theme.name());
@@ -45,13 +46,11 @@ public class ThemeManager {
 
     private static Theme loadThemePreference() {
         Preferences prefs = Preferences.userNodeForPackage(ThemeManager.class);
-        // Default to LIGHT if no preference is saved
         String themeName = prefs.get("app_theme", Theme.LIGHT.name());
         try {
             return Theme.valueOf(themeName);
         } catch (IllegalArgumentException e) {
-            // If the saved value is corrupted, fallback to LIGHT
-            return Theme.LIGHT;
+            return Theme.LIGHT; // Fallback to light theme
         }
     }
 }

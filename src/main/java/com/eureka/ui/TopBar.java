@@ -72,6 +72,7 @@ public class TopBar extends VBox {
         MenuBar menuBar = new MenuBar();
         Menu settingsMenu = new Menu();
         settingsMenu.textProperty().bind(I18n.bind("menu.settings"));
+
         Menu languageMenu = new Menu();
         languageMenu.textProperty().bind(I18n.bind("menu.language"));
 

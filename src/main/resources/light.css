@@ -1,0 +1,179 @@
+/* Global typography and base colors */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+    -fx-text-fill: #1f2933;
+    -fx-background-color: #f4f6fb;
+}
+
+.label {
+    -fx-text-fill: inherit;
+}
+
+/* SetRow styling */
+.set-row {
+    -fx-spacing: 4;
+}
+
+.set-row-header {
+    -fx-padding: 8 12 8 12;
+    -fx-spacing: 12;
+    -fx-background-radius: 10;
+    -fx-background-color: transparent;
+}
+
+.set-row-header:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.08);
+}
+
+.arrow-icon {
+    -fx-pref-width: 26;
+    -fx-pref-height: 26;
+    -fx-alignment: center;
+}
+
+.arrow-icon-shape {
+    -fx-fill: #6b7280;
+}
+
+.set-icon {
+    -fx-pref-width: 26;
+    -fx-pref-height: 26;
+    -fx-background-color: rgba(88, 101, 242, 0.14);
+    -fx-background-radius: 7;
+    -fx-alignment: center;
+}
+
+.set-icon-graphic {
+    -fx-fill: #5865f2;
+}
+
+.set-row-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1f2933;
+}
+
+.notes-panel {
+    -fx-spacing: 6;
+    -fx-padding: 4 0 0 52;
+}
+
+.empty-set-label {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 12px;
+    -fx-padding: 4 0 8 0;
+}
+
+/* NoteRow styling */
+.note-row {
+    -fx-padding: 6 12 6 12;
+    -fx-background-radius: 10;
+    -fx-background-color: transparent;
+}
+
+.note-row:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.08);
+}
+
+.note-row-active {
+    -fx-background-color: rgba(88, 101, 242, 0.16);
+}
+
+.note-row-left {
+    -fx-spacing: 10;
+}
+
+.note-icon {
+    -fx-pref-width: 24;
+    -fx-pref-height: 24;
+    -fx-background-color: rgba(88, 101, 242, 0.18);
+    -fx-background-radius: 7;
+    -fx-alignment: center;
+}
+
+.note-icon-graphic {
+    -fx-fill: #4c51bf;
+    -fx-stroke: transparent;
+    -fx-scale-x: 0.82;
+    -fx-scale-y: 0.82;
+}
+
+.note-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #1f2933;
+}
+
+.note-row-actions {
+    -fx-spacing: 4;
+}
+
+/* Icon buttons */
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-padding: 4;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-cursor: hand;
+}
+
+.icon-button:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}
+
+.icon-button:pressed {
+    -fx-background-color: rgba(88, 101, 242, 0.18);
+}
+
+.icon-button .svg-path {
+    -fx-fill: #4b5563;
+}
+
+.add-note-button .svg-path {
+    -fx-fill: #5865f2;
+}
+
+.menu-button .svg-path,
+.note-menu-button .svg-path {
+    -fx-fill: #4b5563;
+}
+
+/* Dialog and menu styling */
+.styled-dialog {
+    -fx-background-color: white;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.styled-dialog > *.header-panel {
+    -fx-background-color: transparent;
+    -fx-padding: 16 16 0 16;
+}
+
+.styled-dialog > *.content {
+    -fx-padding: 8 16 16 16;
+}
+
+.styled-dialog > *.button-bar > *.container {
+    -fx-padding: 0 16 16 16;
+}
+
+.destructive-menu-item {
+    -fx-text-fill: #dc2626;
+}
+
+.context-menu {
+    -fx-background-radius: 10;
+    -fx-padding: 6 0 6 0;
+}
+
+.context-menu .menu-item {
+    -fx-padding: 6 16 6 16;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: rgba(88, 101, 242, 0.14);
+}

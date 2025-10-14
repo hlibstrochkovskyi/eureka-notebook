@@ -6,23 +6,26 @@ import com.eureka.model.AppState;
 import com.eureka.model.Note;
 import com.eureka.model.NoteSet;
 import javafx.animation.RotateTransition;
-import javafx.geometry.Insets;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * SetRow - Компонент для отображения набора заметок (папки)
- * Содержит заголовок с иконкой, кнопками действий и развернутый список заметок
+ * SetRow renders a single note set inside the sidebar.
+ * It shows the set icon, name, action buttons, and an expandable list of notes.
  */
 public class SetRow extends VBox {
 
@@ -30,11 +33,11 @@ public class SetRow extends VBox {
     private final VBox notesPanel;
     private final NoteSelectionListener noteSelectionListener;
     private final AppState appState;
-    private boolean isExpanded = false;
     private final Runnable onSetChangedCallback;
     private final Label setNameLabel;
     private final SVGPath arrowIcon;
-    private final SVGPath setIcon;
+
+    private boolean isExpanded = false;
 
     public SetRow(NoteSet noteSet, NoteSelectionListener listener, Runnable onSetChangedCallback) {
         this.noteSet = noteSet;
@@ -44,98 +47,108 @@ public class SetRow extends VBox {
 
         getStyleClass().add("set-row");
 
-        // === Header Panel ===
-        HBox headerPanel = new HBox(8);
+        // --- Header ---
+        HBox headerPanel = new HBox();
         headerPanel.setAlignment(Pos.CENTER_LEFT);
-        headerPanel.getStyleClass().add("header");
-        headerPanel.setPadding(new Insets(4, 0, 4, 0));
+        headerPanel.getStyleClass().add("set-header");
 
-        // Expand/Collapse Arrow
         arrowIcon = new SVGPath();
         arrowIcon.setContent("M8 5l6 6-6 6z");
-        arrowIcon.getStyleClass().add("arrow-icon");
+        arrowIcon.getStyleClass().addAll("svg-path", "arrow-icon");
 
-        Region arrowContainer = new Region();
-        arrowContainer.setShape(arrowIcon);
-        arrowContainer.getStyleClass().add("arrow-icon");
-        arrowContainer.setMinWidth(20);
-        arrowContainer.setMinHeight(20);
+        StackPane arrowToggle = new StackPane(arrowIcon);
+        arrowToggle.getStyleClass().add("arrow-toggle");
+        arrowToggle.setOnMouseClicked(event -> {
+            event.consume();
+            toggleExpand();
+        });
 
-        // Set Icon (folder-like icon)
-        setIcon = createSetIcon();
-        Region setIconContainer = new Region();
-        setIconContainer.setShape(setIcon);
-        setIconContainer.getStyleClass().add("set-icon-container");
-        setIconContainer.setMinWidth(18);
-        setIconContainer.setMinHeight(18);
+        SVGPath setGlyph = createSetIcon();
+        StackPane setIconContainer = new StackPane(setGlyph);
+        setIconContainer.getStyleClass().add("set-icon-wrapper");
 
-        // Set Name Label
-        this.setNameLabel = new Label(noteSet.getName());
-        setNameLabel.setStyle("-fx-font-weight: semibold; -fx-font-size: 13;");
+        setNameLabel = new Label(noteSet.getName());
+        setNameLabel.getStyleClass().add("set-name-label");
 
-        // Spacer for alignment
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // === Action Buttons ===
         Button addButton = createActionButton(
-                "M12 5v14m-7-7h14",  // Plus icon
+                "M12 5v14m-7-7h14",
                 "Add new note",
-                e -> addNewNote()
+                event -> addNewNote(),
+                "add-note-button"
         );
 
         Button menuButton = createActionButton(
-                "M12 8a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z",  // Vertical dots
+                "M12 8a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z",
                 "More options",
-                null
+                null,
+                "options-button"
         );
 
-        // === Context Menu ===
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.getStyleClass().add("set-context-menu");
 
         MenuItem renameItem = new MenuItem("Rename Set");
-        renameItem.setOnAction(e -> renameSet());
+        renameItem.setOnAction(event -> renameSet());
 
         MenuItem deleteItem = new MenuItem("Delete Set");
         deleteItem.getStyleClass().add("destructive-menu-item");
-        deleteItem.setOnAction(e -> deleteSet());
+        deleteItem.setOnAction(event -> deleteSet());
 
         contextMenu.getItems().addAll(renameItem, new SeparatorMenuItem(), deleteItem);
-        menuButton.setOnAction(e -> contextMenu.show(menuButton, javafx.geometry.Side.BOTTOM, 0, 5));
+        menuButton.setOnMouseClicked(mouseEvent -> {
+            mouseEvent.consume();
+            if (contextMenu.isShowing()) {
+                contextMenu.hide();
+            } else {
+                contextMenu.show(menuButton, javafx.geometry.Side.BOTTOM, 0, 6);
+            }
+        });
 
-        // Add everything to header
         headerPanel.getChildren().addAll(
-                arrowContainer, setIconContainer, setNameLabel, spacer, addButton, menuButton
+                arrowToggle,
+                setIconContainer,
+                setNameLabel,
+                spacer,
+                addButton,
+                menuButton
         );
 
-        // === Notes Panel (collapsible) ===
-        notesPanel = new VBox(0);
+        notesPanel = new VBox();
         notesPanel.getStyleClass().add("notes-panel");
         notesPanel.setVisible(false);
         notesPanel.setManaged(false);
 
-        this.getChildren().addAll(headerPanel, notesPanel);
+        getChildren().addAll(headerPanel, notesPanel);
 
-        // === Event Handlers ===
         headerPanel.setOnMouseClicked(event -> {
-            if (!(event.getTarget() instanceof Button || event.getTarget() instanceof SVGPath)) {
+            Object target = event.getTarget();
+            if (!(target instanceof Button || target instanceof SVGPath)) {
                 toggleExpand();
             }
         });
     }
 
     /**
-     * Создает кнопку действия с иконкой SVG
+     * Creates a header action button with an SVG glyph.
      */
-    private Button createActionButton(String svgContent, String tooltip, javafx.event.EventHandler<javafx.event.ActionEvent> handler) {
-        SVGPath path = new SVGPath();
-        path.setContent(svgContent);
-        path.getStyleClass().add("svg-path");
+    private Button createActionButton(String svgContent, String tooltipText,
+                                      EventHandler<ActionEvent> handler, String... extraStyleClasses) {
+        SVGPath glyph = new SVGPath();
+        glyph.setContent(svgContent);
+        glyph.getStyleClass().addAll("svg-path", "icon-button-graphic");
 
         Button button = new Button();
-        button.setGraphic(path);
-        button.getStyleClass().add("icon-button");
-        button.setTooltip(new Tooltip(tooltip));
+        button.setGraphic(glyph);
+        button.getStyleClass().addAll("icon-button", "set-header-button");
+        Arrays.stream(extraStyleClasses).forEach(button.getStyleClass()::add);
+        button.setFocusTraversable(false);
+
+        if (tooltipText != null && !tooltipText.isBlank()) {
+            button.setTooltip(new Tooltip(tooltipText));
+        }
 
         if (handler != null) {
             button.setOnAction(handler);
@@ -145,25 +158,24 @@ public class SetRow extends VBox {
     }
 
     /**
-     * Создает иконку папки для сета
+     * Returns the SVG glyph representing a set/folder.
      */
     private SVGPath createSetIcon() {
         SVGPath icon = new SVGPath();
         icon.setContent("M3 7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z");
-        icon.getStyleClass().add("svg-path");
+        icon.getStyleClass().addAll("svg-path", "set-icon");
         return icon;
     }
 
     /**
-     * Переключает расширение/сворачивание панели заметок
+     * Expands or collapses the panel with the set's notes.
      */
     private void toggleExpand() {
         isExpanded = !isExpanded;
 
-        // Анимация стрелки
-        RotateTransition rt = new RotateTransition(Duration.millis(200), arrowIcon);
-        rt.setToAngle(isExpanded ? 90 : 0);
-        rt.play();
+        RotateTransition rotateTransition = new RotateTransition(Duration.millis(200), arrowIcon);
+        rotateTransition.setToAngle(isExpanded ? 90 : 0);
+        rotateTransition.play();
 
         notesPanel.setVisible(isExpanded);
         notesPanel.setManaged(isExpanded);
@@ -174,7 +186,7 @@ public class SetRow extends VBox {
     }
 
     /**
-     * Добавляет новую заметку в этот сет
+     * Creates a new note inside the set and selects it.
      */
     private void addNewNote() {
         if (!isExpanded) {
@@ -185,8 +197,6 @@ public class SetRow extends VBox {
         dialog.setTitle("Create New Note");
         dialog.setHeaderText("Enter title for note in \"" + noteSet.getName() + "\":");
         dialog.setContentText("Title:");
-
-        // Стилизация диалога
         dialog.getDialogPane().getStyleClass().add("styled-dialog");
 
         Optional<String> result = dialog.showAndWait();
@@ -202,14 +212,13 @@ public class SetRow extends VBox {
     }
 
     /**
-     * Удаляет весь сет и все его заметки
+     * Removes the entire set along with its notes after confirmation.
      */
     private void deleteSet() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Set");
         alert.setHeaderText("Delete the set \"" + noteSet.getName() + "\"?");
         alert.setContentText("This will permanently delete the set and all notes within it.\nThis action cannot be undone.");
-
         alert.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
 
         Optional<ButtonType> result = alert.showAndWait();
@@ -223,7 +232,7 @@ public class SetRow extends VBox {
     }
 
     /**
-     * Переименовывает сет
+     * Renames the set and updates the header label.
      */
     private void renameSet() {
         TextInputDialog dialog = new TextInputDialog(noteSet.getName());
@@ -235,14 +244,14 @@ public class SetRow extends VBox {
         result.ifPresent(newName -> {
             if (!newName.trim().isEmpty() && !newName.trim().equals(noteSet.getName())) {
                 noteSet.setName(newName.trim());
-                this.setNameLabel.setText(noteSet.getName());
+                setNameLabel.setText(noteSet.getName());
                 onSetChangedCallback.run();
             }
         });
     }
 
     /**
-     * Обновляет список заметок в панели
+     * Rebuilds the list of note rows inside the set panel.
      */
     private void refreshNotesList() {
         notesPanel.getChildren().clear();
@@ -259,8 +268,6 @@ public class SetRow extends VBox {
             }
         }
     }
-
-    // === Public API Methods ===
 
     public NoteSet getNoteSet() {
         return noteSet;

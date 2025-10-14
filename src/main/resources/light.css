@@ -1,0 +1,323 @@
+/* Light theme styling */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: linear-gradient(to bottom, #f8faff, #f1f4fb);
+    -fx-text-fill: #1f2933;
+    -fx-accent: #5865f2;
+}
+
+.label {
+    -fx-text-fill: #1f2933;
+}
+
+.button {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    -fx-background-color: rgba(248, 249, 252, 0.95);
+    -fx-border-width: 0 1 0 0;
+    -fx-border-color: transparent #dde3f0 transparent transparent;
+}
+
+.sidebar .new-set-button {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+    -fx-text-fill: #3f51b5;
+    -fx-font-weight: 600;
+    -fx-padding: 10 14;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.sidebar .new-set-button:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.2);
+}
+
+.sidebar .sidebar-toggle-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.sidebar .sidebar-toggle-button:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}
+
+.sidebar-toggle-icon {
+    -fx-stroke: #4f5d75;
+    -fx-stroke-width: 2;
+    -fx-fill: transparent;
+}
+
+.sidebar-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.sidebar-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Set rows */
+.set-row {
+    -fx-padding: 4 4 0 4;
+}
+
+.set-row:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.05);
+    -fx-background-radius: 12;
+}
+
+.set-header {
+    -fx-padding: 10 12;
+    -fx-spacing: 10;
+}
+
+.arrow-toggle {
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-alignment: center;
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.arrow-toggle:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}
+
+.arrow-icon {
+    -fx-stroke: #475569;
+    -fx-stroke-width: 1.6;
+    -fx-fill: transparent;
+}
+
+.set-icon-wrapper {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+    -fx-background-radius: 8;
+    -fx-padding: 6;
+    -fx-alignment: center;
+}
+
+.set-icon {
+    -fx-stroke: #5865f2;
+    -fx-stroke-width: 1.4;
+    -fx-fill: rgba(88, 101, 242, 0.2);
+}
+
+.set-name-label {
+    -fx-font-size: 13;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1f2933;
+}
+
+.notes-panel {
+    -fx-padding: 6 0 6 44;
+    -fx-spacing: 4;
+}
+
+.empty-set-label {
+    -fx-text-fill: #64748b;
+    -fx-padding: 6 0;
+    -fx-font-size: 12;
+}
+
+/* Note rows */
+.note-row {
+    -fx-padding: 8 12;
+    -fx-background-radius: 10;
+    -fx-background-color: transparent;
+}
+
+.note-row:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.08);
+}
+
+.note-row-active {
+    -fx-background-color: rgba(88, 101, 242, 0.16);
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.25), 12, 0.2, 0, 4);
+}
+
+.note-content {
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+}
+
+.note-title {
+    -fx-font-size: 13;
+    -fx-font-weight: 500;
+    -fx-text-fill: #1f2933;
+}
+
+.note-icon-wrapper {
+    -fx-background-color: rgba(88, 101, 242, 0.18);
+    -fx-background-radius: 6;
+    -fx-padding: 6;
+    -fx-alignment: center;
+}
+
+.note-icon {
+    -fx-stroke: #5865f2;
+    -fx-stroke-width: 1.6;
+    -fx-fill: rgba(88, 101, 242, 0.3);
+    -fx-scale-x: 0.76;
+    -fx-scale-y: 0.76;
+}
+
+.note-actions {
+    -fx-spacing: 4;
+    -fx-alignment: center-right;
+}
+
+/* Icon buttons */
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 4;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+    -fx-content-display: graphic-only;
+}
+
+.icon-button:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}
+
+.icon-button:armed {
+    -fx-background-color: rgba(88, 101, 242, 0.2);
+}
+
+.icon-button-graphic {
+    -fx-stroke: #475569;
+    -fx-stroke-width: 1.4;
+    -fx-fill: transparent;
+}
+
+.add-note-button .icon-button-graphic {
+    -fx-stroke: #5865f2;
+}
+
+.note-menu-button .icon-button-graphic {
+    -fx-stroke: #475569;
+}
+
+/* Context menus */
+.context-menu {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 18, 0.2, 0, 6);
+}
+
+.context-menu .menu-item {
+    -fx-padding: 6 12;
+    -fx-background-radius: 8;
+    -fx-font-size: 12.5;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}
+
+.destructive-menu-item > .label {
+    -fx-text-fill: #d92c2c;
+}
+
+/* Dialog styling */
+.dialog-pane.styled-dialog {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-color: transparent;
+    -fx-padding: 16;
+}
+
+.dialog-pane.styled-dialog > *.header-panel {
+    -fx-background-color: transparent;
+    -fx-padding: 0 0 12 0;
+}
+
+.dialog-pane.styled-dialog > *.content {
+    -fx-padding: 0 0 16 0;
+}
+
+.dialog-pane.styled-dialog > *.button-bar > *.container {
+    -fx-spacing: 8;
+}
+
+/* Search area */
+.search-area {
+    -fx-background-color: rgba(88, 101, 242, 0.08);
+    -fx-background-radius: 14;
+    -fx-padding: 12 14;
+    -fx-spacing: 12;
+}
+
+.app-title {
+    -fx-font-size: 18;
+    -fx-font-weight: 700;
+    -fx-text-fill: #1f2933;
+}
+
+.search-field {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-padding: 8 12;
+    -fx-border-color: rgba(88, 101, 242, 0.15);
+    -fx-border-radius: 12;
+    -fx-text-fill: #1f2933;
+    -fx-prompt-text-fill: #94a3b8;
+}
+
+.search-field:focused {
+    -fx-border-color: rgba(88, 101, 242, 0.4);
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.25), 12, 0.2, 0, 4);
+}
+
+.search-results-list {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-padding: 8;
+    -fx-border-color: rgba(148, 163, 184, 0.3);
+    -fx-border-radius: 12;
+}
+
+.search-popup {
+    -fx-background-color: transparent;
+    -fx-padding: 6;
+}
+
+.search-popup .menu-item {
+    -fx-background-color: transparent;
+}
+
+.result-title {
+    -fx-font-size: 13;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1f2933;
+}
+
+.result-word-index {
+    -fx-font-size: 11;
+    -fx-font-weight: 600;
+    -fx-text-fill: #64748b;
+}
+
+.list-view {
+    -fx-background-color: transparent;
+}
+
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 8 10;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: rgba(88, 101, 242, 0.12);
+}

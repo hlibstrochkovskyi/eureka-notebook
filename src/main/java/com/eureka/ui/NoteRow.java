@@ -4,21 +4,20 @@ import com.eureka.EurekaApp;
 import com.eureka.NoteSelectionListener;
 import com.eureka.model.AppState;
 import com.eureka.model.Note;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.SVGPath;
 
 import java.util.Optional;
 
 /**
- * NoteRow - Компонент для отображения одной заметки в боковой панели
- * Показывает название заметки и кнопки действий (переименование, удаление)
+ * NoteRow renders an individual note entry inside the set panel.
+ * It shows the note title, a note icon, and a menu for actions.
  */
 public class NoteRow extends BorderPane {
 
@@ -26,6 +25,7 @@ public class NoteRow extends BorderPane {
     private final NoteSelectionListener noteSelectionListener;
     private final AppState appState;
     private final Runnable onNoteChangedCallback;
+    private final Label titleLabel;
 
     public NoteRow(Note note, NoteSelectionListener listener, Runnable onNoteChangedCallback) {
         this.note = note;
@@ -34,59 +34,59 @@ public class NoteRow extends BorderPane {
         this.onNoteChangedCallback = onNoteChangedCallback;
 
         getStyleClass().add("note-row");
-        this.setPadding(new Insets(6, 8, 6, 12));
 
-        // === Left Side: Note Icon + Title ===
-        HBox leftContent = new HBox(8);
+        HBox leftContent = new HBox();
         leftContent.setAlignment(Pos.CENTER_LEFT);
+        leftContent.getStyleClass().add("note-content");
 
-        // Note icon
         SVGPath noteIcon = new SVGPath();
         noteIcon.setContent("M9 12H7v2h2v-2zm0-4H7v2h2V8zm4 0h-2v2h2V8zm0 4h-2v2h2v-2zm0-8H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z");
-        noteIcon.getStyleClass().add("svg-path");
-        noteIcon.setStyle("-fx-stroke-width: 1.2; -fx-scale-x: 0.75; -fx-scale-y: 0.75;");
+        noteIcon.getStyleClass().addAll("svg-path", "note-icon");
 
-        Region iconContainer = new Region();
-        iconContainer.setShape(noteIcon);
-        iconContainer.getStyleClass().add("note-icon-container");
-        iconContainer.setMinWidth(16);
-        iconContainer.setMinHeight(16);
-        iconContainer.setStyle("-fx-background-color: rgba(88, 101, 242, 0.3); -fx-background-radius: 4;");
+        StackPane iconWrapper = new StackPane(noteIcon);
+        iconWrapper.getStyleClass().add("note-icon-wrapper");
 
-        Label titleLabel = new Label(note.getTitle());
-        titleLabel.setWrapText(false);
-        titleLabel.setStyle("-fx-font-size: 13;");
+        titleLabel = new Label(note.getTitle());
+        titleLabel.getStyleClass().add("note-title");
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
-        leftContent.getChildren().addAll(iconContainer, titleLabel);
-        this.setLeft(leftContent);
+        leftContent.getChildren().addAll(iconWrapper, titleLabel);
+        setLeft(leftContent);
 
-        // === Right Side: Action Buttons ===
-        HBox rightContent = new HBox(4);
+        HBox rightContent = new HBox();
         rightContent.setAlignment(Pos.CENTER_RIGHT);
-        rightContent.setStyle("-fx-padding: 0;");
+        rightContent.getStyleClass().add("note-actions");
 
         Button menuButton = createIconButton(
-                "M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"  // Dots
+                "M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"
         );
+        menuButton.getStyleClass().add("note-menu-button");
 
         rightContent.getChildren().add(menuButton);
-        this.setRight(rightContent);
+        setRight(rightContent);
 
-        // === Context Menu ===
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.getStyleClass().add("note-context-menu");
 
         MenuItem renameItem = new MenuItem("Rename");
-        renameItem.setOnAction(e -> renameNote());
+        renameItem.setOnAction(event -> renameNote());
 
         MenuItem deleteItem = new MenuItem("Delete");
         deleteItem.getStyleClass().add("destructive-menu-item");
-        deleteItem.setOnAction(e -> deleteNote());
+        deleteItem.setOnAction(event -> deleteNote());
 
         contextMenu.getItems().addAll(renameItem, new SeparatorMenuItem(), deleteItem);
-        menuButton.setOnAction(e -> contextMenu.show(menuButton, Side.BOTTOM, 0, 5));
+        menuButton.setOnMouseClicked(mouseEvent -> {
+            mouseEvent.consume();
+            if (contextMenu.isShowing()) {
+                contextMenu.hide();
+            } else {
+                contextMenu.show(menuButton, Side.BOTTOM, 0, 6);
+            }
+        });
 
-        // === Click Handler ===
-        this.setOnMouseClicked(event -> {
+        setOnMouseClicked(event -> {
             if (!(event.getTarget() instanceof Button || event.getTarget() instanceof SVGPath)) {
                 noteSelectionListener.onNoteSelected(note);
             }
@@ -94,22 +94,22 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Создает иконку-кнопку
+     * Builds the icon-only button used for the note menu.
      */
     private Button createIconButton(String svgContent) {
         SVGPath path = new SVGPath();
         path.setContent(svgContent);
-        path.getStyleClass().add("svg-path");
+        path.getStyleClass().addAll("svg-path", "icon-button-graphic");
 
         Button button = new Button();
         button.setGraphic(path);
-        button.getStyleClass().add("icon-button");
-        button.setStyle("-fx-padding: 4; -fx-min-width: 28; -fx-min-height: 28;");
+        button.getStyleClass().addAll("icon-button", "note-action-button");
+        button.setFocusTraversable(false);
         return button;
     }
 
     /**
-     * Открывает диалог переименования заметки
+     * Opens the rename dialog and updates the note title.
      */
     private void renameNote() {
         TextInputDialog dialog = new TextInputDialog(note.getTitle());
@@ -121,6 +121,7 @@ public class NoteRow extends BorderPane {
         result.ifPresent(newName -> {
             if (!newName.trim().isEmpty() && !newName.trim().equals(note.getTitle())) {
                 note.setTitle(newName.trim());
+                titleLabel.setText(note.getTitle());
                 onNoteChangedCallback.run();
                 noteSelectionListener.onNoteRenamed(note);
             }
@@ -128,14 +129,13 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Удаляет заметку с подтверждением
+     * Deletes the note after confirmation.
      */
     private void deleteNote() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Note");
         alert.setHeaderText("Delete the note \"" + note.getTitle() + "\"?");
         alert.setContentText("This action cannot be undone.");
-
         alert.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
 
         Optional<ButtonType> result = alert.showAndWait();
@@ -148,7 +148,7 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Устанавливает активное/неактивное состояние (для подсветки)
+     * Applies the visual active state when the note is selected.
      */
     public void setActive(boolean isActive) {
         if (isActive) {

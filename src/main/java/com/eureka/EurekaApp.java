@@ -21,7 +21,6 @@ public class EurekaApp extends Application {
 
 
 
-    // Replace the start() method in EurekaApp.java
     @Override
     public void start(Stage primaryStage) {
         AppState.loadInstance(DataStorageService.loadData());
@@ -45,7 +44,6 @@ public class EurekaApp extends Application {
 
         Scene scene = new Scene(rootLayout, 1200, 800);
 
-        // ThemeManager now handles all stylesheet loading.
         ThemeManager.initialize(scene);
 
         primaryStage.setTitle("Eureka");

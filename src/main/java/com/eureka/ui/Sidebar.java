@@ -53,7 +53,6 @@ public class Sidebar extends BorderPane {
         toggleButton.setOnAction(e -> toggleCollapse(true));
 
         newSetButton = new Button();
-        // Bind the button text to our I18n service
         newSetButton.textProperty().bind(I18n.bind("button.newSet"));
         newSetButton.getStyleClass().add("new-set-button");
         newSetButton.setMaxWidth(Double.MAX_VALUE);
@@ -98,7 +97,6 @@ public class Sidebar extends BorderPane {
     public void collapse(boolean animate) {
         isCollapsed = true;
         animateToggleButton();
-        // Use setManaged to completely remove nodes from layout calculations
         newSetButton.setManaged(false);
         newSetButton.setVisible(false);
         scrollPane.setManaged(false);
@@ -114,7 +112,6 @@ public class Sidebar extends BorderPane {
     public void expand(boolean animate) {
         isCollapsed = false;
         animateToggleButton();
-        // Bring nodes back into the layout
         newSetButton.setManaged(true);
         newSetButton.setVisible(true);
         scrollPane.setManaged(true);

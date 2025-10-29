@@ -10,6 +10,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.RotateTransition;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
@@ -21,20 +22,38 @@ import javafx.util.Duration;
 import java.util.Optional;
 import java.util.List;
 
+/**
+ * Represents the collapsible sidebar component of the application.
+ * Displays a list of note sets (SetRow instances) and provides controls
+ * for creating new sets and collapsing/expanding the sidebar itself.
+ */
 public class Sidebar extends BorderPane {
 
+    // VBox container holding all the SetRow components.
     private final VBox setsPanel;
+    // Reference to the global application state.
     private final AppState appState;
+    // Listener to notify about note selection events originating from this sidebar.
     private final NoteSelectionListener noteSelectionListener;
+    // Reference to the parent SplitPane containing this sidebar and the editor.
     private final SplitPane parentSplitPane;
+    // Button for creating a new note set.
     private final Button newSetButton;
+    // ScrollPane that contains the setsPanel, allowing scrolling if sets exceed available height.
     private final ScrollPane scrollPane;
+    // Button to toggle the collapsed/expanded state of the sidebar.
     private final Button toggleButton;
+    // SVG icon used within the toggleButton, animates rotation.
     private final SVGPath toggleIcon;
 
     private boolean isCollapsed = false;
-    private double lastDividerPosition = 0.3;
+    private double lastDividerPosition = 0.3; // Default expanded position
 
+    /**
+     * Constructs the Sidebar.
+     * @param listener        The listener to notify when notes are selected.
+     * @param parentSplitPane The SplitPane that contains this Sidebar, used for collapse/expand animations.
+     */
     public Sidebar(NoteSelectionListener listener, SplitPane parentSplitPane) {
         this.noteSelectionListener = listener;
         this.appState = AppState.getInstance();
@@ -44,6 +63,7 @@ public class Sidebar extends BorderPane {
         this.setMinWidth(52);
         this.setPrefWidth(280);
 
+        // --- Toggle Button Setup ---
         toggleButton = new Button();
         toggleIcon = new SVGPath();
         toggleIcon.getStyleClass().add("sidebar-toggle-icon");
@@ -52,12 +72,14 @@ public class Sidebar extends BorderPane {
         toggleButton.getStyleClass().add("sidebar-toggle-button");
         toggleButton.setOnAction(e -> toggleCollapse(true));
 
+        // --- New Set Button Setup ---
         newSetButton = new Button();
         newSetButton.textProperty().bind(I18n.bind("button.newSet"));
         newSetButton.getStyleClass().add("new-set-button");
         newSetButton.setMaxWidth(Double.MAX_VALUE);
         newSetButton.setOnAction(e -> createNewSet());
 
+        // --- Top Bar Layout (contains New Set and Toggle buttons) ---
         BorderPane topBar = new BorderPane();
         topBar.setPadding(new Insets(12, 0, 0, 12));
         topBar.setCenter(newSetButton);
@@ -66,9 +88,11 @@ public class Sidebar extends BorderPane {
 
         this.setTop(topBar);
 
+        // --- Sets Panel Setup (VBox inside ScrollPane) ---
         setsPanel = new VBox(8);
         setsPanel.setPadding(new Insets(12, 12, 0, 12));
 
+        // ScrollPane to contain the setsPanel
         scrollPane = new ScrollPane(setsPanel);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -78,6 +102,11 @@ public class Sidebar extends BorderPane {
         updateSetsList();
     }
 
+    /**
+     * Toggles the collapsed/expanded state of the sidebar.
+     * Saves the state, animates the toggle button, and calls collapse or expand.
+     * @param animate true to animate the transition, false for immediate change.
+     */
     private void toggleCollapse(boolean animate) {
         isCollapsed = !isCollapsed;
         appState.setSidebarCollapsed(isCollapsed);
@@ -94,9 +123,15 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    /**
+     * Collapses the sidebar.
+     * Hides and removes main content from layout, animates the divider to position 0.
+     * @param animate true to animate the divider transition.
+     */
     public void collapse(boolean animate) {
         isCollapsed = true;
         animateToggleButton();
+
         newSetButton.setManaged(false);
         newSetButton.setVisible(false);
         scrollPane.setManaged(false);
@@ -109,9 +144,15 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    /**
+     * Expands the sidebar.
+     * Shows and includes main content in layout, animates the divider to its last known position.
+     * @param animate true to animate the divider transition.
+     */
     public void expand(boolean animate) {
         isCollapsed = false;
         animateToggleButton();
+
         newSetButton.setManaged(true);
         newSetButton.setVisible(true);
         scrollPane.setManaged(true);
@@ -124,6 +165,10 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    /**
+     * Animates the SplitPane divider to a target position.
+     * @param targetPosition The target position for the divider (between 0.0 and 1.0).
+     */
     private void animateDividerTo(double targetPosition) {
         Timeline timeline = new Timeline();
         KeyValue kv = new KeyValue(parentSplitPane.getDividers().get(0).positionProperty(), targetPosition);
@@ -132,13 +177,22 @@ public class Sidebar extends BorderPane {
         timeline.play();
     }
 
+    /**
+     * Animates the rotation of the toggle button's arrow icon.
+     * Rotates to 180 degrees when collapsed ('>') and 0 degrees when expanded ('<').
+     */
     private void animateToggleButton() {
         RotateTransition rt = new RotateTransition(Duration.millis(200), toggleIcon);
-        rt.setToAngle(isCollapsed ? 180 : 0); // 0 degrees for '<', 180 for '>'
+        rt.setToAngle(isCollapsed ? 180 : 0);
         rt.play();
     }
 
 
+    /**
+     * Opens a dialog to prompt the user for a new set name.
+     * If a valid name is entered, creates a new NoteSet, adds it to the AppState,
+     * and updates the list displayed in the sidebar.
+     */
     private void createNewSet() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.titleProperty().bind(I18n.bind("dialog.newSet.title"));
@@ -147,14 +201,19 @@ public class Sidebar extends BorderPane {
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {
-            if (!name.trim().isEmpty()) {
-                NoteSet newSet = new NoteSet(name.trim());
+            String trimmedName = name.trim();
+            if (!trimmedName.isEmpty()) {
+                NoteSet newSet = new NoteSet(trimmedName);
                 appState.addSet(newSet);
                 updateSetsList();
             }
         });
     }
 
+    /**
+     * Clears and repopulates the setsPanel with SetRow components
+     * based on the current list of sets in AppState.
+     */
     public void updateSetsList() {
         setsPanel.getChildren().clear();
         for (NoteSet set : appState.getSets()) {
@@ -163,13 +222,19 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    /**
+     * Ensures the SetRow corresponding to the given note's set ID is expanded.
+     * If the sidebar is collapsed, it expands it first.
+     * @param note The Note whose parent SetRow should be expanded. Can be null.
+     */
     public void expandSetForNote(Note note) {
         if (isCollapsed) {
             expand(true);
         }
         if (note == null) return;
+
         String setId = note.getSetId();
-        for (var child : setsPanel.getChildren()) {
+        for (Node child : setsPanel.getChildren()) {
             if (child instanceof SetRow setRow) {
                 if (setRow.getNoteSet().getId().equals(setId)) {
                     setRow.expand();
@@ -179,8 +244,13 @@ public class Sidebar extends BorderPane {
         }
     }
 
+    /**
+     * Updates the highlighting state of all NoteRows within all SetRows.
+     * Only the NoteRow corresponding to the activeNote (if any) will be highlighted.
+     * @param activeNote The Note that is currently active/selected in the editor, or null if none.
+     */
     public void updateNoteHighlighting(Note activeNote) {
-        for (var child : setsPanel.getChildren()) {
+        for (Node child : setsPanel.getChildren()) {
             if (child instanceof SetRow setRow) {
                 for (NoteRow noteRow : setRow.getNoteRows()) {
                     boolean isActive = activeNote != null && noteRow.getNote().getId().equals(activeNote.getId());

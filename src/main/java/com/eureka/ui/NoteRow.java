@@ -8,6 +8,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -17,16 +18,29 @@ import javafx.scene.shape.SVGPath;
 import java.util.Optional;
 
 /**
- * NoteRow - Компонент для отображения одной заметки в боковой панели
- * Показывает название заметки и кнопки действий (переименование, удаление)
+ * Represents a single row displaying a note within the sidebar's SetRow.
+ * Shows the note's title, an icon, and action buttons (e.g., for a context menu).
+ * Handles click events for note selection and context menu actions like rename and delete.
  */
 public class NoteRow extends BorderPane {
 
+    // The Note data object this row represents.
     private final Note note;
+    // Listener to notify when a note is selected, renamed, or deleted.
     private final NoteSelectionListener noteSelectionListener;
+    // Reference to the application's global state.
     private final AppState appState;
+    // Callback function to run when changes occur (e.g., rename, delete)
+    // that require the parent (SetRow) to refresh its list.
     private final Runnable onNoteChangedCallback;
 
+    /**
+     * Constructs a NoteRow UI component.
+     * @param note                  The Note object to display.
+     * @param listener              The listener to notify about note interactions.
+     * @param onNoteChangedCallback A callback function to execute when the note list needs refreshing
+     * (e.g., after deleting or renaming this note).
+     */
     public NoteRow(Note note, NoteSelectionListener listener, Runnable onNoteChangedCallback) {
         this.note = note;
         this.noteSelectionListener = listener;
@@ -40,12 +54,13 @@ public class NoteRow extends BorderPane {
         HBox leftContent = new HBox(8);
         leftContent.setAlignment(Pos.CENTER_LEFT);
 
-        // Note icon
+        // Note icon (using SVGPath)
         SVGPath noteIcon = new SVGPath();
-        noteIcon.setContent("M9 12H7v2h2v-2zm0-4H7v2h2V8zm4 0h-2v2h2V8zm0 4h-2v2h2v-2zm0-8H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z");
+        noteIcon.setContent("M9 12H7v2h2v-2zm0-4H7v2h2V8zm4 0h-2v2h2V8zm0 4h-2v2h2v-2zm0-8H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"); // SVG path data for a note icon
         noteIcon.getStyleClass().add("svg-path");
         noteIcon.setStyle("-fx-stroke-width: 1.2; -fx-scale-x: 0.75; -fx-scale-y: 0.75;");
 
+        // Container for the icon to manage size and background
         Region iconContainer = new Region();
         iconContainer.setShape(noteIcon);
         iconContainer.getStyleClass().add("note-icon-container");
@@ -65,19 +80,23 @@ public class NoteRow extends BorderPane {
         rightContent.setAlignment(Pos.CENTER_RIGHT);
         rightContent.setStyle("-fx-padding: 0;");
 
+        // Menu button (three dots)
         Button menuButton = createIconButton(
-                "M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"  // Dots
+                "M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"
         );
 
+        // Add the menu button to the right HBox
         rightContent.getChildren().add(menuButton);
         this.setRight(rightContent);
 
         // === Context Menu ===
         ContextMenu contextMenu = new ContextMenu();
 
+        // Menu item for renaming the note
         MenuItem renameItem = new MenuItem("Rename");
         renameItem.setOnAction(e -> renameNote());
 
+        // Menu item for deleting the note
         MenuItem deleteItem = new MenuItem("Delete");
         deleteItem.getStyleClass().add("destructive-menu-item");
         deleteItem.setOnAction(e -> deleteNote());
@@ -94,7 +113,9 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Создает иконку-кнопку
+     * Creates an icon button using an SVG path for the graphic.
+     * @param svgContent The string containing the SVG path data.
+     * @return A configured Button with the SVG icon.
      */
     private Button createIconButton(String svgContent) {
         SVGPath path = new SVGPath();
@@ -109,7 +130,9 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Открывает диалог переименования заметки
+     * Opens a dialog to rename the current note.
+     * If a new valid name is entered, it updates the Note object,
+     * triggers the callback to refresh the parent list, and notifies the listener.
      */
     private void renameNote() {
         TextInputDialog dialog = new TextInputDialog(note.getTitle());
@@ -119,8 +142,9 @@ public class NoteRow extends BorderPane {
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
-            if (!newName.trim().isEmpty() && !newName.trim().equals(note.getTitle())) {
-                note.setTitle(newName.trim());
+            String trimmedName = newName.trim();
+            if (!trimmedName.isEmpty() && !trimmedName.equals(note.getTitle())) {
+                note.setTitle(trimmedName);
                 onNoteChangedCallback.run();
                 noteSelectionListener.onNoteRenamed(note);
             }
@@ -128,7 +152,9 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Удаляет заметку с подтверждением
+     * Shows a confirmation dialog and deletes the note if confirmed.
+     * Updates the application state, search service, notifies the listener,
+     * and triggers the callback to refresh the parent list.
      */
     private void deleteNote() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -148,7 +174,9 @@ public class NoteRow extends BorderPane {
     }
 
     /**
-     * Устанавливает активное/неактивное состояние (для подсветки)
+     * Sets the visual state of the row to active (highlighted) or inactive.
+     * Adds or removes a CSS style class to change the appearance.
+     * @param isActive true to set the row as active (highlighted), false for inactive.
      */
     public void setActive(boolean isActive) {
         if (isActive) {
@@ -160,6 +188,10 @@ public class NoteRow extends BorderPane {
         }
     }
 
+    /**
+     * Gets the Note object associated with this row.
+     * @return The Note object.
+     */
     public Note getNote() {
         return note;
     }
